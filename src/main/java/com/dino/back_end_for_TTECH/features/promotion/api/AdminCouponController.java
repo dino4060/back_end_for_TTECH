@@ -29,12 +29,20 @@ public class AdminCouponController {
 
   CouponService couponService;
 
-  @PostMapping
-  public ResponseEntity<?> create(
-      @Valid @RequestBody CouponBody body) {
+  @GetMapping("/{id}")
+  public ResponseEntity<?> get(
+      @PathVariable long id) {
 
-    var result = this.couponService.create(body);
-    return ResponseEntity.ok(result);
+    var data = this.couponService.get(id);
+    return ResponseEntity.ok(data);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<?> delete(
+      @PathVariable long id) {
+
+    this.couponService.deactivate(id);
+    return ResponseEntity.ok(Map.of());
   }
 
   @PutMapping("/{id}")
@@ -48,19 +56,11 @@ public class AdminCouponController {
     return ResponseEntity.ok(result);
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<?> get(
-      @PathVariable long id) {
+  @PostMapping
+  public ResponseEntity<?> create(
+      @Valid @RequestBody CouponBody body) {
 
-    var data = this.couponService.get(id);
-    return ResponseEntity.ok(data);
-  }
-
-  @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(
-      @PathVariable long id) {
-
-    this.couponService.delete(id);
-    return ResponseEntity.ok(Map.of());
+    var result = this.couponService.create(body);
+    return ResponseEntity.ok(result);
   }
 }

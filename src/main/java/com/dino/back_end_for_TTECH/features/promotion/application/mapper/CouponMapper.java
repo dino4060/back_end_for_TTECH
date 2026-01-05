@@ -7,6 +7,7 @@ import org.mapstruct.ReportingPolicy;
 
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponData;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponDataSaved;
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.shared.application.mapper.BodyMapper;
 import com.dino.back_end_for_TTECH.shared.application.mapper.DataMapper;
@@ -19,4 +20,6 @@ public interface CouponMapper extends BodyMapper<Coupon, CouponBody>, DataMapper
 
   @Mapping(target = "units", ignore = true)
   void toModel(CouponBody body, @MappingTarget Coupon model);
+
+  CouponDataSaved toDataSaved(Coupon model);
 }

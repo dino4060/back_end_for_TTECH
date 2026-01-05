@@ -30,23 +30,49 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PROTECTED)
 public class Campaign extends BaseEntity implements BaseStatus<Status> {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "campaigns_seq")
-    @SequenceGenerator(name = "campaigns_seq", allocationSize = 1)
-    @Column(name = "campaign_id")
-    Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "campaigns_seq")
+  @SequenceGenerator(name = "campaigns_seq", allocationSize = 1)
+  @Column(name = "campaign_id")
+  Long id;
 
-    @Column(name = "promotion_group", insertable = false, updatable = false)
-    String promotionGroup;
+  @Column(name = "promotion_group", insertable = false, updatable = false)
+  String promotionGroup;
 
-    @Column(updatable = false)
-    String promotionType;
+  @Column(updatable = false)
+  String promotionType;
 
-    String name;
+  String name;
 
-    LocalDateTime startTime;
+  LocalDateTime startTime;
 
-    LocalDateTime endTime;
+  LocalDateTime endTime;
 
-    String status;
+  String status;
+
+  public boolean syncStatus() {
+    // Bypass DEACTIVATED
+    if (hasStatus(Status.DEACTIVATED))
+      return false;
+
+    LocalDateTime now = LocalDateTime.now();
+    Status newStatus;
+
+    // UPCOMING: Today < StartTime
+    // ENDED: Today > EndTime
+    // ONGOING: StartTime < Today < EndTime
+    if (now.isBefore(startTime))
+      newStatus = Status.UPCOMING;
+    else if (now.isAfter(endTime))
+      newStatus = Status.ENDED;
+    else
+      newStatus = Status.ONGOING;
+
+    // Bypass same status
+    if (hasStatus(newStatus))
+      return false;
+
+    this.setStatus(newStatus);
+    return false;
+  }
 }

@@ -11,9 +11,11 @@ import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRep
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.CouponMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponData;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponDataSaved;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponUnitBody;
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
 
 import lombok.AccessLevel;
@@ -30,12 +32,54 @@ public class CouponService {
   CouponRepository couponRepo;
   CouponMapper couponMapper;
 
+  CampaignService campaignService;
+
   ProductRepository productRepo;
 
+  // @Transactional(readOnly = true)
+  public CouponData get(long id) {
+    var coupon = this.couponRepo.getById(id);
+
+    campaignService.saveSyncStatus(coupon);
+
+    return this.couponMapper.toData(coupon);
+  }
+
   @Transactional
-  public CouponData create(CouponBody body) {
+  public void deactivate(long id) {
+    var coupon = this.couponRepo.getById(id);
+
+    coupon.setStatus(Status.DEACTIVATED);
+
+    this.couponRepo.delete(coupon);
+  }
+
+  @Transactional
+  public CouponDataSaved update(CouponBody body) {
+    var coupon = this.couponRepo.getById(body.getId());
+
+    // Convert body to coupon (exclude units)
+    this.couponMapper.toModel(body, coupon);
+
+    coupon.syncStatus();
+
+    // Process coupon units (products)
+    if (coupon.getIsAllProducts() == false) {
+      this.processCouponUnits(coupon, body.getUnits());
+    }
+
+    // Save coupon (cascade and orphanRemoval will save units)
+    var savedCoupon = this.couponRepo.save(coupon);
+
+    return this.couponMapper.toDataSaved(savedCoupon);
+  }
+
+  @Transactional
+  public CouponDataSaved create(CouponBody body) {
     // Convert body to coupon (exclude units)
     var coupon = this.couponMapper.toModel(body);
+
+    coupon.syncStatus();
 
     // Process coupon units (products)
     if (coupon.getIsAllProducts() == false) {
@@ -49,25 +93,7 @@ public class CouponService {
     // Save coupon (cascade will save units)
     var savedCoupon = this.couponRepo.save(coupon);
 
-    return this.couponMapper.toData(savedCoupon.getId());
-  }
-
-  @Transactional
-  public CouponData update(CouponBody body) {
-    var coupon = this.couponRepo.getById(body.getId());
-
-    // Convert body to coupon (exclude units)
-    this.couponMapper.toModel(body, coupon);
-
-    // Process coupon units (products)
-    if (coupon.getIsAllProducts() == false) {
-      this.processCouponUnits(coupon, body.getUnits());
-    }
-
-    // Save coupon (cascade and orphanRemoval will save units)
-    var savedCoupon = this.couponRepo.save(coupon);
-
-    return this.couponMapper.toData(savedCoupon.getId());
+    return this.couponMapper.toDataSaved(savedCoupon);
   }
 
   /**
@@ -120,15 +146,4 @@ public class CouponService {
 
     return unit;
   }
-
-  public Object get(long id) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'get'");
-  }
-
-  public void delete(long id) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'delete'");
-  }
-
 }
