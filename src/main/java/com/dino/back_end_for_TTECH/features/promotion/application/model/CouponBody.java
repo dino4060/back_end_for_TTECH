@@ -11,9 +11,9 @@ import lombok.EqualsAndHashCode;
 @Data
 public class CouponBody extends CampaignBody {
 
-  Integer discountAmount;
+  Boolean isFixed;
 
-  Integer discountPercent;
+  Integer discountValue;
 
   Integer minSpend;
 
@@ -25,7 +25,7 @@ public class CouponBody extends CampaignBody {
 
   Integer limitPerClient;
 
-  Boolean isAllProducts;
+  Boolean isApplyAll;
 
   @Valid
   List<CouponUnitBody> units = new ArrayList<>();

@@ -38,7 +38,7 @@ public class AdminCouponController {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(
+  public ResponseEntity<?> deactivate(
       @PathVariable long id) {
 
     this.couponService.deactivate(id);
@@ -52,6 +52,7 @@ public class AdminCouponController {
     if (body.getId() == null) {
       throw new BadRequestE("CouponBody.id is required");
     }
+
     var result = this.couponService.update(body);
     return ResponseEntity.ok(result);
   }

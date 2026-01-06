@@ -40,7 +40,7 @@ public class CouponService {
   public CouponData get(long id) {
     var coupon = this.couponRepo.getById(id);
 
-    campaignService.saveSyncStatus(coupon);
+    this.campaignService.saveSyncStatus(coupon);
 
     return this.couponMapper.toData(coupon);
   }
@@ -51,7 +51,7 @@ public class CouponService {
 
     coupon.setStatus(Status.DEACTIVATED);
 
-    this.couponRepo.delete(coupon);
+    this.couponRepo.save(coupon);
   }
 
   @Transactional
@@ -64,7 +64,7 @@ public class CouponService {
     coupon.syncStatus();
 
     // Process coupon units (products)
-    if (coupon.getIsAllProducts() == false) {
+    if (coupon.getIsApplyAll() == false) {
       this.processCouponUnits(coupon, body.getUnits());
     }
 
@@ -82,7 +82,7 @@ public class CouponService {
     coupon.syncStatus();
 
     // Process coupon units (products)
-    if (coupon.getIsAllProducts() == false) {
+    if (coupon.getIsApplyAll() == false) {
       List<CouponUnit> newUnits = body.getUnits().stream()
           .map(unitBody -> this.createCouponUnit(coupon, unitBody))
           .collect(Collectors.toList());

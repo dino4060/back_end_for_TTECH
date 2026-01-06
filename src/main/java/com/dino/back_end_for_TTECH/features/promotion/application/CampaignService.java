@@ -84,6 +84,10 @@ public class CampaignService {
         this.campaignMapper.toQueryable(query),
         this.campaignMapper.toPageable(query));
 
+    for (var campaign : page.getContent()) {
+      this.saveSyncStatus(campaign);
+    }
+
     return this.campaignMapper.toPageData(
         page, (Campaign c) -> this.campaignMapper.toData(c));
   }

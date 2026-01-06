@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @Data
 public class CouponData extends CampaignData {
 
-  Integer discountAmount;
+  Boolean isFixed;
 
-  Integer discountPercent;
+  Integer discountValue;
 
   Integer minSpend;
 
@@ -25,7 +25,7 @@ public class CouponData extends CampaignData {
 
   Integer limitPerClient;
 
-  Boolean isAllProducts;
+  Boolean isApplyAll;
 
   List<CouponUnitData> units;
 }

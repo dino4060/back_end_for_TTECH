@@ -44,15 +44,15 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PROTECTED)
 public class Coupon extends Campaign {
 
-  Integer discountAmount;
+  Boolean isFixed;
 
-  Integer discountPercent;
+  Integer discountValue;
 
   Integer minSpend;
 
   Integer maxDiscount;
 
-  Integer expiryClaimDays;
+  Integer validityDays;
 
   Integer totalLimit;
 
@@ -64,7 +64,7 @@ public class Coupon extends Campaign {
   @Column(columnDefinition = "jsonb")
   Map<Long, Integer> countPerClient = new HashMap<>();
 
-  Boolean isAllProducts;
+  Boolean isApplyAll;
 
   @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   List<CouponUnit> units = new ArrayList<>();
