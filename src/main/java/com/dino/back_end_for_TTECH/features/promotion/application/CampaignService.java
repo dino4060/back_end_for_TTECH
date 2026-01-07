@@ -27,19 +27,11 @@ public class CampaignService {
   CampaignRepository campaignRepo;
   CampaignMapper campaignMapper;
 
-  // @Async("campaignTaskExecutor")
-  // @Transactional
-  // public void saveSyncStatus(Campaign campaign) {
-  // var isSync = campaign.syncStatus();
-  // if (isSync == true) {
-  // campaignRepo
-  // .findById(campaign.getId()) // Hibernate Session find và manage Entity
-  // .ifPresent(c -> {
-  // c.syncStatus();
-  // campaignRepo.save(c);
-  // });
-  // }
-  // }
+  public void delete(long id) {
+    var model = this.campaignRepo.getById(id);
+
+    this.campaignRepo.delete(model);
+  }
 
   public void saveSyncStatus(Campaign campaign) {
     var isSync = campaign.syncStatus();
@@ -91,4 +83,18 @@ public class CampaignService {
     return this.campaignMapper.toPageData(
         page, (Campaign c) -> this.campaignMapper.toData(c));
   }
+
+  // @Async("campaignTaskExecutor")
+  // @Transactional
+  // public void saveSyncStatus(Campaign campaign) {
+  // var isSync = campaign.syncStatus();
+  // if (isSync == true) {
+  // campaignRepo
+  // .findById(campaign.getId()) // Hibernate Session find và manage Entity
+  // .ifPresent(c -> {
+  // c.syncStatus();
+  // campaignRepo.save(c);
+  // });
+  // }
+  // }
 }

@@ -10,13 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRepository;
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.CouponMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyPatch;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyUpdate;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponData;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponDataSaved;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponUnitBody;
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
-import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
+import com.dino.back_end_for_TTECH.shared.application.utils.AppMapper;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +38,6 @@ public class CouponService {
 
   ProductRepository productRepo;
 
-  // @Transactional(readOnly = true)
   public CouponData get(long id) {
     var coupon = this.couponRepo.getById(id);
 
@@ -46,16 +47,25 @@ public class CouponService {
   }
 
   @Transactional
-  public void deactivate(long id) {
+  public void delete(long id) {
     var coupon = this.couponRepo.getById(id);
 
-    coupon.setStatus(Status.DEACTIVATED);
-
-    this.couponRepo.save(coupon);
+    this.couponRepo.delete(coupon);
   }
 
   @Transactional
-  public CouponDataSaved update(CouponBody body) {
+  public CouponDataSaved patch(CouponBodyPatch body) {
+    var coupon = this.couponRepo.getById(body.getId());
+
+    AppMapper.patch(body.getStatus(), coupon::setStatus);
+
+    var savedCoupon = this.couponRepo.save(coupon);
+
+    return this.couponMapper.toDataSaved(savedCoupon);
+  }
+
+  @Transactional
+  public CouponDataSaved update(CouponBodyUpdate body) {
     var coupon = this.couponRepo.getById(body.getId());
 
     // Convert body to coupon (exclude units)

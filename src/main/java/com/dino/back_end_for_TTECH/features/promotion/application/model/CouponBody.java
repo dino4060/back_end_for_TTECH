@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CouponBody extends CampaignBody {
 
   Boolean isFixed;

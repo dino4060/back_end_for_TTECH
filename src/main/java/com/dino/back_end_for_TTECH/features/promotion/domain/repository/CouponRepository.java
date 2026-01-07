@@ -10,7 +10,7 @@ public interface CouponRepository extends BaseRepository<Coupon, Long> {
 
   @Override
   default String customModelName() {
-    return Coupon.class.getName();
+    return Coupon.class.getSimpleName();
   }
 
 }

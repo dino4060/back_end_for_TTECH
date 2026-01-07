@@ -6,9 +6,14 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,13 +23,20 @@ import org.springframework.web.bind.annotation.RestController;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminCampaignController {
 
-    CampaignService campaignService;
+  CampaignService service;
 
-    @GetMapping
-    public ResponseEntity<?> list(
-            @Valid @ModelAttribute CampaignQuery query
-    ) {
-        var data = this.campaignService.list(query);
-        return ResponseEntity.ok(data);
-    }
+  @GetMapping
+  public ResponseEntity<?> list(
+      @Valid @ModelAttribute CampaignQuery query) {
+    var data = this.service.list(query);
+    return ResponseEntity.ok(data);
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<?> delete(
+      @PathVariable long id) {
+
+    this.service.delete(id);
+    return ResponseEntity.ok(Map.of());
+  }
 }

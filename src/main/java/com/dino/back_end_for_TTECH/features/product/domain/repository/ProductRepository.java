@@ -8,6 +8,6 @@ public interface ProductRepository extends BaseRepository<Product, Long> {
 
   @Override
   default String customModelName() {
-    return Product.class.getName();
+    return Product.class.getSimpleName();
   }
 }

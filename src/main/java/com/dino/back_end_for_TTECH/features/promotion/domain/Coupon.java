@@ -33,8 +33,8 @@ import lombok.experimental.FieldDefaults;
 @Table(name = "vouchers")
 @DynamicInsert
 @DynamicUpdate
-@SQLDelete(sql = "UPDATE vouchers SET is_deleted = true WHERE campaign_id=?")
-@SQLRestriction("is_deleted = false")
+@SQLDelete(sql = "UPDATE vouchers SET is_deleted_child = true WHERE campaign_id=?")
+@SQLRestriction("is_deleted_child = false")
 @DiscriminatorValue("VOUCHER")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "promotion_type", discriminatorType = DiscriminatorType.STRING)
@@ -72,4 +72,6 @@ public class Coupon extends Campaign {
   public Coupon(Long id) {
     this.id = id;
   }
+
+  Boolean isDeletedChild = false;
 }

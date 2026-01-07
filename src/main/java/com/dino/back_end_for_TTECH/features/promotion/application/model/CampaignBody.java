@@ -2,7 +2,6 @@ package com.dino.back_end_for_TTECH.features.promotion.application.model;
 
 import java.time.LocalDateTime;
 
-import com.dino.back_end_for_TTECH.shared.application.utils.BaseBody;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AccessLevel;
@@ -13,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = false)
 @Data
 @FieldDefaults(level = AccessLevel.PROTECTED)
-public class CampaignBody extends BaseBody {
+public class CampaignBody {
 
   String promotionType;
 
