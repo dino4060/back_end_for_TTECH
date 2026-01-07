@@ -17,39 +17,30 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminSaleController {
 
-    SaleService saleService;
+  SaleService service;
 
-    @GetMapping("/sales/{id}")
-    public ResponseEntity<?> get(
-            @PathVariable long id
-    ) {
-        var data = this.saleService.get(id);
-        return ResponseEntity.ok(data);
-    }
+  @GetMapping("/sales/{id}")
+  public ResponseEntity<?> get(
+      @PathVariable long id) {
 
+    var data = this.service.get(id);
+    return ResponseEntity.ok(data);
+  }
 
-    @PostMapping("/sales")
-    public ResponseEntity<?> create(
-            @Valid @RequestBody SaleBody body
-    ) {
-        this.saleService.create(body);
-        return ResponseEntity.ok(Map.of());
-    }
+  @PostMapping("/sales")
+  public ResponseEntity<?> create(
+      @Valid @RequestBody SaleBody body) {
 
-    @PutMapping("/sales/{id}")
-    public ResponseEntity<?> update(
-            @PathVariable long id,
-            @Valid @RequestBody SaleBody body
-    ) {
-        this.saleService.update(id, body);
-        return ResponseEntity.ok(Map.of());
-    }
+    this.service.create(body);
+    return ResponseEntity.ok(Map.of());
+  }
 
-    @DeleteMapping("/sales/{id}")
-    public ResponseEntity<?> remove(
-            @PathVariable long id
-    ) {
-        this.saleService.remove(id);
-        return ResponseEntity.ok(Map.of());
-    }
+  @PutMapping("/sales/{id}")
+  public ResponseEntity<?> update(
+      @PathVariable long id,
+      @Valid @RequestBody SaleBody body) {
+
+    this.service.update(id, body);
+    return ResponseEntity.ok(Map.of());
+  }
 }

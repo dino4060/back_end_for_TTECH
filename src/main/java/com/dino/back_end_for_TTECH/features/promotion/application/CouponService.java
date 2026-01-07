@@ -34,7 +34,7 @@ public class CouponService {
   CouponRepository couponRepo;
   CouponMapper couponMapper;
 
-  CampaignService campaignService;
+  CampaignHelper campaignService;
 
   ProductRepository productRepo;
 
@@ -47,9 +47,7 @@ public class CouponService {
   }
 
   @Transactional
-  public void delete(long id) {
-    var coupon = this.couponRepo.getById(id);
-
+  public void delete(Coupon coupon) {
     this.couponRepo.delete(coupon);
   }
 

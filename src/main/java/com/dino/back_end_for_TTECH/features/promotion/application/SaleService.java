@@ -6,6 +6,7 @@ import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRep
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.SaleMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.SaleBody;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.SaleData;
+import com.dino.back_end_for_TTECH.features.promotion.domain.Sale;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CampaignRepository;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.SaleRepository;
@@ -25,89 +26,86 @@ import java.util.List;
 @Slf4j
 public class SaleService {
 
-    CampaignService campService;
-    CampaignRepository campaignRepo;
+  CampaignHelper campService;
+  CampaignRepository campaignRepo;
 
-    SaleRepository saleRepo;
-    SaleMapper saleMapper;
+  SaleRepository saleRepo;
+  SaleMapper saleMapper;
 
-    ProductService productService;
-    ProductRepository productRepo;
+  ProductService productService;
+  ProductRepository productRepo;
 
-    public SaleData get(long id) {
-        var sale = this.saleRepo
-                .findById(id)
-                .orElseThrow(() -> new ModelNotFoundE("Sale"));
+  public SaleData get(long id) {
+    var sale = this.saleRepo
+        .findById(id)
+        .orElseThrow(() -> new ModelNotFoundE("Sale"));
 
-        return this.saleMapper.toData(sale);
+    return this.saleMapper.toData(sale);
+  }
+
+  @Transactional
+  public SaleData create(SaleBody saleBody) {
+    var sale = this.saleMapper.toModel(saleBody);
+    this.campService.genStatus(sale);
+    sale.getUnits().forEach(u -> {
+      u.setSale(sale);
+      u.setProduct(productRepo
+          .findById(u.getProduct().getId())
+          .orElseThrow(() -> new ModelNotFoundE("Product")));
+    });
+
+    var newSale = this.saleRepo.save(sale);
+
+    if (newSale.hasStatus(Status.ONGOING)) {
+      newSale.getUnits().forEach(u -> {
+        this.productService.applySaleUnit(u);
+      });
     }
 
-    @Transactional
-    public SaleData create(SaleBody saleBody) {
-        var sale = this.saleMapper.toModel(saleBody);
-        this.campService.genStatus(sale);
-        sale.getUnits().forEach(u -> {
-            u.setSale(sale);
-            u.setProduct(productRepo
-                    .findById(u.getProduct().getId())
-                    .orElseThrow(() -> new ModelNotFoundE("Product")));
-        });
+    return this.saleMapper.toData(newSale);
+  }
 
-        var newSale = this.saleRepo.save(sale);
+  @Transactional
+  public SaleData update(long id, SaleBody body) {
+    var sale = this.saleRepo
+        .findById(id)
+        .orElseThrow(() -> new ModelNotFoundE("Sale"));
+    this.saleMapper.toModel(body, sale);
 
-        if (newSale.hasStatus(Status.ONGOING)) {
-            newSale.getUnits().forEach(u -> {
-                this.productService.applySaleUnit(u);
-            });
-        }
+    // var prevStatus = sale.getStatus();
+    this.campService.genStatus(sale);
 
-        return this.saleMapper.toData(newSale);
+    var editModel = this.saleRepo.save(sale);
+
+    // var editStatus = sale.getStatus();
+    // if (!prevStatus.equals(editStatus) && editModel.hasStatus(Status.ONGOING)) {
+    // editModel.getUnits().forEach(u -> {
+    // this.productService.applySaleUnit(u);
+    // });
+    // }
+    // if (!prevStatus.equals(editStatus) && editModel.hasStatus(Status.ENDED)) {
+    // editModel.getUnits().forEach(u -> {
+    // this.productService.cancelSaleUnit(u);
+    // });
+    // }
+
+    return this.saleMapper.toData(editModel);
+  }
+
+  // Don't @Transactional
+  public void delete(Sale sale) {
+
+    var isOngoingSale = sale.hasStatus(Status.ONGOING);
+    List<Product> discountProducts = sale.getUnits().stream()
+        .filter(u -> u.isOn())
+        .map(u -> u.getProduct()).toList();
+
+    this.campaignRepo.delete(sale);
+
+    if (isOngoingSale) {
+      discountProducts.forEach(p -> {
+        this.productService.cancelSaleUnit(p);
+      });
     }
-
-    @Transactional
-    public SaleData update(long id, SaleBody body) {
-        var sale = this.saleRepo
-                .findById(id)
-                .orElseThrow(() -> new ModelNotFoundE("Sale"));
-        this.saleMapper.toModel(body, sale);
-
-        // var prevStatus = sale.getStatus();
-        this.campService.genStatus(sale);
-
-        var editModel = this.saleRepo.save(sale);
-
-        // var editStatus = sale.getStatus();
-        // if (!prevStatus.equals(editStatus) && editModel.hasStatus(Status.ONGOING)) {
-        // editModel.getUnits().forEach(u -> {
-        // this.productService.applySaleUnit(u);
-        // });
-        // }
-        // if (!prevStatus.equals(editStatus) && editModel.hasStatus(Status.ENDED)) {
-        // editModel.getUnits().forEach(u -> {
-        // this.productService.cancelSaleUnit(u);
-        // });
-        // }
-
-        return this.saleMapper.toData(editModel);
-    }
-
-    // Don't @Transactional
-    public void remove(long id) {
-        var sale = this.saleRepo
-                .findById(id)
-                .orElseThrow(() -> new ModelNotFoundE("Sale"));
-
-        var ongoingSale = sale.hasStatus(Status.ONGOING);
-        List<Product> cancelProducts = sale.getUnits().stream()
-                .filter(u -> u.isOn())
-                .map(u -> u.getProduct()).toList();
-
-        this.campaignRepo.delete(sale);
-
-        if (ongoingSale) {
-            cancelProducts.forEach(p -> {
-                this.productService.cancelSaleUnit(p);
-            });
-        }
-    }
+  }
 }

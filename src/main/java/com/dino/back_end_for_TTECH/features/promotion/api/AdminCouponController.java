@@ -1,9 +1,6 @@
 package com.dino.back_end_for_TTECH.features.promotion.api;
 
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,29 +26,21 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminCouponController {
 
-  CouponService couponService;
+  CouponService service;
 
   @GetMapping("/{id}")
   public ResponseEntity<?> get(
       @PathVariable long id) {
 
-    var data = this.couponService.get(id);
+    var data = this.service.get(id);
     return ResponseEntity.ok(data);
-  }
-
-  @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(
-      @PathVariable long id) {
-
-    this.couponService.delete(id);
-    return ResponseEntity.ok(Map.of());
   }
 
   @PatchMapping
   public ResponseEntity<?> patch(
       @Valid @RequestBody CouponBodyPatch body) {
 
-    var result = this.couponService.patch(body);
+    var result = this.service.patch(body);
     return ResponseEntity.ok(result);
   }
 
@@ -59,7 +48,7 @@ public class AdminCouponController {
   public ResponseEntity<?> update(
       @Valid @RequestBody CouponBodyUpdate body) {
 
-    var result = this.couponService.update(body);
+    var result = this.service.update(body);
     return ResponseEntity.ok(result);
   }
 
@@ -67,7 +56,7 @@ public class AdminCouponController {
   public ResponseEntity<?> create(
       @Valid @RequestBody CouponBody body) {
 
-    var result = this.couponService.create(body);
+    var result = this.service.create(body);
     return ResponseEntity.ok(result);
   }
 }
