@@ -56,13 +56,13 @@ public class Coupon extends Campaign {
 
   Integer totalLimit;
 
-  Integer limitPerClient;
+  Integer limitPerCustomer;
 
   Integer usedCount = 0;
 
   @Type(JsonType.class)
   @Column(columnDefinition = "jsonb")
-  Map<Long, Integer> countPerClient = new HashMap<>();
+  Map<Long, Integer> countPerCustomer = new HashMap<>();
 
   Boolean isApplyAll;
 

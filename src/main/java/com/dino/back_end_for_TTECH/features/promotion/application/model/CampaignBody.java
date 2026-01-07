@@ -1,18 +1,19 @@
 package com.dino.back_end_for_TTECH.features.promotion.application.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.FieldDefaults;
-
 import java.time.LocalDateTime;
 
-@NoArgsConstructor
+import com.dino.back_end_for_TTECH.shared.application.utils.BaseBody;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldDefaults;
+
+@EqualsAndHashCode(callSuper = false)
 @Data
 @FieldDefaults(level = AccessLevel.PROTECTED)
-public class CampaignBody {
-  Long id;
+public class CampaignBody extends BaseBody {
 
   String promotionType;
 

@@ -1,6 +1,6 @@
 package com.dino.back_end_for_TTECH.features.product.application.model;
 
-import com.dino.back_end_for_TTECH.shared.application.utils.AppId;
+import com.dino.back_end_for_TTECH.shared.application.utils.ObjectId;
 
 import java.util.List;
 
@@ -14,8 +14,8 @@ public record ProductBody(
         String description,
         int guaranteeMonths,
 
-        AppId category,
-        AppId series,
+        ObjectId category,
+        ObjectId series,
         PriceBody price,
         StockBody stock
 ) {

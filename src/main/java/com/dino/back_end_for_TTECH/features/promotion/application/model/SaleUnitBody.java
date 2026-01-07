@@ -1,6 +1,6 @@
 package com.dino.back_end_for_TTECH.features.promotion.application.model;
 
-import com.dino.back_end_for_TTECH.shared.application.utils.AppId;
+import com.dino.back_end_for_TTECH.shared.application.utils.ObjectId;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,5 +22,5 @@ public class SaleUnitBody {
 
     String levelType;
 
-    AppId product;
+    ObjectId product;
 }

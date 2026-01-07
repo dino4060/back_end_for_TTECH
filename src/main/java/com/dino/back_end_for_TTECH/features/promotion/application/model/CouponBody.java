@@ -19,11 +19,11 @@ public class CouponBody extends CampaignBody {
 
   Integer maxDiscount;
 
-  Integer expiryClaimDays;
+  Integer validityDays;
 
   Integer totalLimit;
 
-  Integer limitPerClient;
+  Integer limitPerCustomer;
 
   Boolean isApplyAll;
 

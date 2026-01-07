@@ -127,7 +127,7 @@ public class CouponService {
   }
 
   private void updateCouponUnit(CouponUnit unit, CouponUnitBody body) {
-    Long newProductId = body.getProductId();
+    Long newProductId = body.getProduct().getId();
     Long currProductId = unit.getProduct() != null ? unit.getProduct().getId() : null;
 
     // Update product field
@@ -138,7 +138,7 @@ public class CouponService {
   }
 
   private CouponUnit createCouponUnit(Coupon coupon, CouponUnitBody body) {
-    var product = this.productRepo.getIdById(body.getProductId());
+    var product = this.productRepo.getIdById(body.getProduct().getId());
 
     var unit = new CouponUnit();
     unit.setCoupon(coupon);
