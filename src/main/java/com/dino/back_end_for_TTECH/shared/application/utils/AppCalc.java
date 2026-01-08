@@ -1,11 +1,21 @@
 package com.dino.back_end_for_TTECH.shared.application.utils;
 
-public class AppCalc {
-    public static int partOfPercent(int percent, int total) {
-        return total * (percent / 100);
-    }
+import lombok.experimental.UtilityClass;
 
-    public static int percentOfPart(int part, int total) {
-        return (1 - part / total) * 100;
-    }
+@UtilityClass
+public class AppCalc {
+  public int restOfDiscountPercent(int discountPercent, int total) {
+    double discountAmount = total * (discountPercent / 100.0);
+
+    return (int) (total - discountAmount);
+  }
+
+  public int discountPercentOfRest(int part, int total) {
+    if (total <= 0)
+      return 0;
+
+    int discountAmount = total - part;
+    return (discountAmount * 100) / total;
+
+  }
 }

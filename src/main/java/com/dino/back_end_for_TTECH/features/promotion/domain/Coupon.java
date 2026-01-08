@@ -109,7 +109,7 @@ public class Coupon extends Campaign {
    * - Generate random code if CODE_VOUCHER and code is null
    */
   private void processCouponCode() {
-    var isCouponCode = PromoType.CODE_VOUCHER.toString().equals(this.getPromotionType());
+    var isCouponCode = PromoType.COUPON_CODE.toString().equals(this.getPromotionType());
 
     if (!isCouponCode) {
       this.setCouponCode(null);
@@ -124,7 +124,7 @@ public class Coupon extends Campaign {
    */
   private void processMaxDiscount() {
     var isFixed = Boolean.TRUE.equals(this.getIsFixed());
-    var isCouponCode = PromoType.CODE_VOUCHER.toString().equals(this.getPromotionType());
+    var isCouponCode = PromoType.COUPON_CODE.toString().equals(this.getPromotionType());
 
     if (isFixed) {
       this.setMaxDiscount(null);

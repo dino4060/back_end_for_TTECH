@@ -14,32 +14,32 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class PriceService {
 
-    private final PriceRepository priceRepository;
+  private final PriceRepository priceRepository;
 
-    public void create(PriceBody body, Price model) {
-        model.setMainPrice(body.retailPrice());
-        model.setSidePrice(-1);
-        model.setDealPercent(0);
+  public void create(PriceBody body, Price model) {
+    model.setMainPrice(body.retailPrice());
+    model.setSidePrice(-1);
+    model.setDealPercent(0);
 
-//        this.priceRepository.save(model);
+    // this.priceRepository.save(model);
+  }
+
+  @Transactional
+  public void recalculate(PriceBody body, Price model) {
+    var retailPrice = body.retailPrice();
+    var discountPercent = model.getDealPercent();
+    var nonSale = discountPercent == 0;
+
+    if (nonSale) {
+      model.setMainPrice(retailPrice);
+      model.setSidePrice(-1);
+      model.setDealPercent(0);
+    } else {
+      model.setMainPrice(AppCalc.restOfDiscountPercent(discountPercent, retailPrice));
+      model.setSidePrice(retailPrice);
+      model.setDealPercent(discountPercent);
     }
 
-    @Transactional
-    public void recalculate(PriceBody body, Price model) {
-        var retailPrice = body.retailPrice();
-        var discountPercent = model.getDealPercent();
-        var nonSale = discountPercent == 0;
-
-        if (nonSale) {
-            model.setMainPrice(retailPrice);
-            model.setSidePrice(-1);
-            model.setDealPercent(0);
-        } else {
-            model.setMainPrice(AppCalc.partOfPercent(discountPercent, retailPrice));
-            model.setSidePrice(retailPrice);
-            model.setDealPercent(discountPercent);
-        }
-
-        this.priceRepository.save(model);
-    }
+    this.priceRepository.save(model);
+  }
 }
