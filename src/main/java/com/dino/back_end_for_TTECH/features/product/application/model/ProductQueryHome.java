@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductHomeQuery extends PageQuery {
+public class ProductQueryHome extends PageQuery {
     String keywords;
     Long category;
     Long series;

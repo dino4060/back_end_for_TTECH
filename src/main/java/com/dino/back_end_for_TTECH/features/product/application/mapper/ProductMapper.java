@@ -25,14 +25,14 @@ public interface ProductMapper extends PageMapper {
       "discount", new Sort.Order(Sort.Direction.DESC, "price.dealPercent"),
       "new", new Sort.Order(Sort.Direction.DESC, "createdAt"));
 
-  default Pageable toPageable(ProductHomeQuery query) {
+  default Pageable toPageable(ProductQueryHome query) {
     var pageNumber = query.getPage() - 1;
     var sizeNumber = query.getSize();
     var sort = Sort.by(SortMap.get(query.getStatistics()));
     return PageRequest.of(pageNumber, sizeNumber, sort);
   }
 
-  default Specification<Product> toQueryable(ProductHomeQuery query) {
+  default Specification<Product> toQueryable(ProductQueryHome query) {
     return ProductSpec.fromQuery(query);
   }
 
@@ -42,7 +42,7 @@ public interface ProductMapper extends PageMapper {
 
   ProductData toProductData(Product product);
 
-  ProductFullData toProductFullData(Product product);
+  ProductDataFull toProductFullData(Product product);
 
   Product toProduct(ProductBody body);
 

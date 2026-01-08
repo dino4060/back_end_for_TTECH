@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductData {
+public class ProductDataFull {
   long id;
   String name;
   String thumb;
@@ -25,6 +25,8 @@ public class ProductData {
 
   PriceData price;
   StockData stock;
+  CategoryData category;
+  SeriesData series;
 
   List<ProductSpecification> specifications = new ArrayList<>();
 }

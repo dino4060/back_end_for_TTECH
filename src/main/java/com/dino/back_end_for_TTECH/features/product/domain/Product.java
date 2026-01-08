@@ -17,6 +17,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -59,11 +60,11 @@ public class Product extends BaseEntity implements BaseStatus<Status> {
 
   @Type(JsonType.class)
   @Column(columnDefinition = "jsonb")
-  List<ProductSpecification> specifications;
+  List<ProductSpecification> specifications = new ArrayList<>();
 
   @Type(JsonType.class)
   @Column(columnDefinition = "jsonb")
-  List<ProductVariation> variations;
+  List<ProductVariation> variations = new ArrayList<>();
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "category_id")

@@ -1,6 +1,6 @@
 package com.dino.back_end_for_TTECH.features.product.domain.specification;
 
-import com.dino.back_end_for_TTECH.features.product.application.model.ProductHomeQuery;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductQueryHome;
 import com.dino.back_end_for_TTECH.features.product.application.model.ProductQuery;
 import com.dino.back_end_for_TTECH.features.product.domain.Product;
 import jakarta.persistence.criteria.Path;
@@ -70,7 +70,7 @@ public class ProductSpec {
                 .and(inPriceRange(query.getPrices()));
     }
 
-    public static Specification<Product> fromQuery(ProductHomeQuery query) {
+    public static Specification<Product> fromQuery(ProductQueryHome query) {
         return Specification
                 .where(likeFullText(query.getKeywords()))
                 .and(hasSeriesId(query.getSeries()))

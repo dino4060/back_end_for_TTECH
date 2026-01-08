@@ -103,7 +103,7 @@ public class ProductService {
 
   // READ //
 
-  public PageData<ProductFullData> list(ProductQuery query) {
+  public PageData<ProductDataFull> list(ProductQuery query) {
     var page = this.productRepository.findAll(
         this.mapper.toQueryable(query),
         this.mapper.toPageable(query));
@@ -112,7 +112,7 @@ public class ProductService {
         page, (Product p) -> this.mapper.toProductFullData(p));
   }
 
-  public PageData<ProductFullData> list(ProductHomeQuery query) {
+  public PageData<ProductDataFull> list(ProductQueryHome query) {
     var page = this.productRepository.findAll(
         this.mapper.toQueryable(query),
         this.mapper.toPageable(query));
