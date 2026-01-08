@@ -11,6 +11,9 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.PromoType;
+import com.dino.back_end_for_TTECH.shared.application.utils.AppGen;
+
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -44,6 +47,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PROTECTED)
 public class Coupon extends Campaign {
 
+  String couponType;
+
+  String couponCode;
+
   Boolean isFixed;
 
   Integer discountValue;
@@ -74,4 +81,55 @@ public class Coupon extends Campaign {
   }
 
   Boolean isDeletedChild = false;
+
+  /**
+   * Description
+   * - Sync status based on dates
+   * - Generate coupon code if needed
+   * - Clear max discount if fixed discount
+   */
+  public void processIntegrity() {
+    this.syncStatus();
+    this.processCouponType();
+    this.processCouponCode();
+    this.processMaxDiscount();
+  }
+
+  /**
+   * Description:
+   * - Set coupon type same promotion type
+   */
+  private void processCouponType() {
+    this.setCouponType(this.getPromotionType());
+  }
+
+  /**
+   * Description:
+   * - Clear code if not CODE_VOUCHER type
+   * - Generate random code if CODE_VOUCHER and code is null
+   */
+  private void processCouponCode() {
+    var isCouponCode = PromoType.CODE_VOUCHER.toString().equals(this.getPromotionType());
+
+    if (!isCouponCode) {
+      this.setCouponCode(null);
+    } else if (this.getCouponCode() == null) {
+      this.setCouponCode(AppGen.randomCode(8));
+    }
+  }
+
+  /**
+   * Description:
+   * - Clear max discount if using fixed discount
+   */
+  private void processMaxDiscount() {
+    var isFixed = Boolean.TRUE.equals(this.getIsFixed());
+    var isCouponCode = PromoType.CODE_VOUCHER.toString().equals(this.getPromotionType());
+
+    if (isFixed) {
+      this.setMaxDiscount(null);
+    } else if (isCouponCode && this.getMaxDiscount() != null) {
+      this.setMaxDiscount(1);
+    }
+  }
 }

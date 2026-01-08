@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class CouponData extends CampaignData {
 
+  String couponCode;
+
   Boolean isFixed;
 
   Integer discountValue;

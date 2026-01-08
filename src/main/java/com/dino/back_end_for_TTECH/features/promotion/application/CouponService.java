@@ -69,7 +69,8 @@ public class CouponService {
     // Convert body to coupon (exclude units)
     this.couponMapper.toModel(body, coupon);
 
-    coupon.syncStatus();
+    // Process fields
+    coupon.processIntegrity();
 
     // Process coupon units (products)
     if (coupon.getIsApplyAll() == false) {
@@ -87,7 +88,8 @@ public class CouponService {
     // Convert body to coupon (exclude units)
     var coupon = this.couponMapper.toModel(body);
 
-    coupon.syncStatus();
+    // Process fields
+    coupon.processIntegrity();
 
     // Process coupon units (products)
     if (coupon.getIsApplyAll() == false) {

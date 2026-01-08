@@ -11,6 +11,8 @@ import java.util.List;
 @Data
 public class CouponDataSaved extends CampaignData {
 
+  String couponCode;
+
   Boolean isFixed;
 
   Integer discountValue;
