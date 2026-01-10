@@ -1,5 +1,6 @@
 package com.dino.back_end_for_TTECH.features.promotion.domain;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,9 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.PromoType;
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppGen;
 
 import io.hypersistence.utils.hibernate.type.json.JsonType;
@@ -81,6 +84,147 @@ public class Coupon extends Campaign {
   }
 
   Boolean isDeletedChild = false;
+
+  /**
+   * Check if coupon can be applied to the order
+   * 
+   * @param customerId  Customer ID applying the coupon
+   * @param spendAmount Total order amount before discount
+   * @param productIDs  List of products in the order
+   * @return CouponApplyResult with application status, discount amount, and
+   *         message
+   */
+  public CouponApplyResult canApply(Long customerId, Integer spendAmount, List<Long> productIDs) {
+    // 1. Check if coupon type is COUPON_CODE
+    if (!PromoType.COUPON_CODE.toString().equals(this.promotionType)) {
+      return CouponApplyResult.fail("This is not a coupon code");
+    }
+
+    // 2. Check coupon status (must be ONGOING)
+    if (!hasStatus(Status.ONGOING)) {
+      return CouponApplyResult.fail("Coupon không hoạt động");
+    }
+
+    // 3. Check time validity (extra safety check)
+    LocalDateTime now = LocalDateTime.now();
+    if (this.startTime != null && now.isBefore(this.startTime)) {
+      return CouponApplyResult.fail("Coupon is not yet valid");
+    }
+    if (this.endTime != null && now.isAfter(this.endTime)) {
+      return CouponApplyResult.fail("Coupon has expired");
+    }
+
+    // 4. Check total usage limit
+    if (this.totalLimit != null && this.usedCount >= this.totalLimit) {
+      return CouponApplyResult.fail("Coupon đã hết lượt sử dụng");
+    }
+
+    // 5. Check customer usage limit
+    if (customerId != null && this.limitPerCustomer != null) {
+      Integer customerUsage = this.countPerCustomer.getOrDefault(customerId, 0);
+      if (customerUsage >= this.limitPerCustomer) {
+        return CouponApplyResult.fail("Bạn đã hết lượt sử dụng coupon");
+      }
+    }
+
+    // 6. Check minimum spend requirement
+    if (this.minSpend != null && spendAmount < this.minSpend) {
+      return CouponApplyResult.fail(
+          String.format("Chi tiêu tối thiểu %,d VND để sử dụng coupon (hiện tại: %,d VND)",
+              this.minSpend, spendAmount));
+    }
+
+    // 7. Check product eligibility (if not apply to all products)
+    if (Boolean.FALSE.equals(this.isApplyAll)) {
+      if (!isProductListEligible(productIDs)) {
+        return CouponApplyResult.fail("Coupon không sử dụng cho sản phẩm này");
+      }
+    }
+
+    // 8. Calculate discount amount
+    Integer discountAmount = calculateDiscount(spendAmount);
+
+    // 9. Success
+    return CouponApplyResult.success(this.getPromotionType(), this.getId(), this.getCouponCode(), discountAmount);
+  }
+
+  /**
+   * Check if at least one product in the list is eligible for the coupon
+   */
+  private boolean isProductListEligible(List<Long> productIDs) {
+    if (productIDs == null || productIDs.isEmpty()) {
+      return false;
+    }
+
+    // Get eligible product IDs from coupon units
+    List<Long> eligibleProductIDs = this.units.stream()
+        .map(unit -> unit.getProduct().getId())
+        .toList();
+
+    // Check if any product in the order is eligible
+    return productIDs.stream()
+        .anyMatch(productID -> eligibleProductIDs.contains(productID));
+  }
+
+  /**
+   * Calculate discount amount based on coupon type (fixed or percentage)
+   */
+  private Integer calculateDiscount(Integer spendAmount) {
+    Integer discount;
+
+    if (Boolean.TRUE.equals(this.isFixed)) {
+      // Fixed discount
+      discount = this.discountValue;
+    } else {
+      // Percentage discount
+      discount = (spendAmount * this.discountValue) / 100;
+
+      // Apply max discount cap if exists
+      if (this.maxDiscount != null && discount > this.maxDiscount) {
+        discount = this.maxDiscount;
+      }
+    }
+
+    // Discount cannot exceed spend amount
+    if (discount > spendAmount) {
+      discount = spendAmount;
+    }
+
+    return discount;
+  }
+
+  /**
+   * Mark coupon as used by customer
+   * Should be called after successful order placement
+   */
+  public void markAsUsed(Long customerId) {
+    // Increment total usage
+    this.usedCount++;
+
+    // Increment customer usage
+    if (customerId != null) {
+      Integer currentUsage = this.countPerCustomer.getOrDefault(customerId, 0);
+      this.countPerCustomer.put(customerId, currentUsage + 1);
+    }
+  }
+
+  /**
+   * Rollback coupon usage (for order cancellation)
+   */
+  public void rollbackUsage(Long customerId) {
+    // Decrement total usage
+    if (this.usedCount > 0) {
+      this.usedCount--;
+    }
+
+    // Decrement customer usage
+    if (customerId != null) {
+      Integer currentUsage = this.countPerCustomer.getOrDefault(customerId, 0);
+      if (currentUsage > 0) {
+        this.countPerCustomer.put(customerId, currentUsage - 1);
+      }
+    }
+  }
 
   /**
    * Description

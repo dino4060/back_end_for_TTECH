@@ -6,10 +6,12 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRepository;
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.CouponMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyApply;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyPatch;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyUpdate;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponData;
@@ -17,7 +19,11 @@ import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponDa
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponUnitBody;
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
+import com.dino.back_end_for_TTECH.shared.api.annotation.AuthUser;
+import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
+import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppMapper;
 
 import lombok.AccessLevel;
@@ -37,6 +43,67 @@ public class CouponService {
   CampaignHelper campaignService;
 
   ProductRepository productRepo;
+
+  @Transactional
+  public CouponApplyResult applyCoupon(
+      @AuthUser CurrentUser customer,
+      @RequestBody CouponBodyApply body) {
+
+    // Find coupon by code
+    Coupon coupon = couponRepo
+        .findByCouponCode(body.getCouponCode())
+        .orElseThrow(() -> new BadRequestE("Invalid coupon code"));
+
+    // Check if coupon can be applied
+    CouponApplyResult result = coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs());
+
+    if (!result.getIsApplied()) {
+      return result;
+    }
+
+    // Mark as used (will be saved when transaction commits)
+    coupon.markAsUsed(customer.id());
+
+    return result;
+  }
+
+  @Transactional
+  public void applyCoupon(
+      @AuthUser CurrentUser customer,
+      @RequestBody CouponApplyResult appliedCoupon) {
+
+    if (!appliedCoupon.getIsApplied()) {
+      return;
+    }
+
+    // Find coupon by code
+    Coupon coupon = couponRepo
+        .findById(appliedCoupon.getId())
+        .orElseThrow(() -> new BadRequestE("Coupon not found"));
+
+    // Mark as used (will be saved when transaction commits)
+    coupon.markAsUsed(customer.id());
+  }
+
+  @Transactional(readOnly = true)
+  public CouponApplyResult preview(
+      @AuthUser CurrentUser customer,
+      @RequestBody CouponBodyApply body) {
+
+    if (body.getId() != null) {
+      return couponRepo.findById(body.getId())
+          .map(coupon -> coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs()))
+          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy Coupon"));
+    }
+
+    if (body.getCouponCode() != null) {
+      return couponRepo.findByCouponCode(body.getCouponCode())
+          .map(coupon -> coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs()))
+          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy mã Coupon: " + body.getCouponCode()));
+    }
+
+    throw new BadRequestE("CouponBodyApply.id or .couponCode is required");
+  }
 
   public CouponData get(long id) {
     var coupon = this.couponRepo.getById(id);

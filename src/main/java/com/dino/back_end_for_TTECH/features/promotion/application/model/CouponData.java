@@ -27,6 +27,8 @@ public class CouponData extends CampaignData {
 
   Integer limitPerCustomer;
 
+  Integer usedCount;
+
   Boolean isApplyAll;
 
   List<CouponUnitData> units;
