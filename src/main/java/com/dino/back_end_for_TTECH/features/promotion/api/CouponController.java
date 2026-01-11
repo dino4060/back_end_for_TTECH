@@ -29,6 +29,24 @@ public class CouponController {
 
   CouponService service;
 
+  @PostMapping("/coupon-previews")
+  public ResponseEntity<?> preview(
+      @AuthUser CurrentUser user,
+      @RequestBody CouponBodyApply body) {
+
+    var data = this.service.preview(user.id(), body);
+    return ResponseEntity.ok(data);
+  }
+
+  @PostMapping("/coupon-previews/coupon-claims")
+  public ResponseEntity<?> previewClaims(
+      @AuthUser CurrentUser user,
+      @RequestBody CouponBodyApply body) {
+
+    var data = this.service.previewClaims(user.id(), body);
+    return ResponseEntity.ok(data);
+  }
+
   @PostMapping("/coupon-claims/{id}")
   public ResponseEntity<?> claim(
       @AuthUser CurrentUser user,
@@ -45,15 +63,6 @@ public class CouponController {
 
     this.service.unclaim(user.id(), id);
     return ResponseEntity.ok(Map.of());
-  }
-
-  @PostMapping("/coupon-previews")
-  public ResponseEntity<?> preview(
-      @AuthUser CurrentUser user,
-      @RequestBody CouponBodyApply body) {
-
-    var data = this.service.preview(user.id(), body);
-    return ResponseEntity.ok(data);
   }
 
   @GetMapping

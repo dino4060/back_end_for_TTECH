@@ -95,11 +95,6 @@ public class Coupon extends Campaign {
    *         message
    */
   public CouponApplyResult canApply(Long customerId, Integer spendAmount, List<Long> productIDs) {
-    // 1. Check if coupon type is COUPON_CODE
-    if (!PromoType.COUPON_CODE.toString().equals(this.promotionType)) {
-      return CouponApplyResult.fail("This is not a coupon code");
-    }
-
     // 2. Check coupon status (must be ONGOING)
     if (!hasStatus(Status.ONGOING)) {
       return CouponApplyResult.fail("Coupon không hoạt động");
@@ -130,7 +125,7 @@ public class Coupon extends Campaign {
     // 6. Check minimum spend requirement
     if (this.minSpend != null && spendAmount < this.minSpend) {
       return CouponApplyResult.fail(
-          String.format("Chi tiêu tối thiểu %,d VND để sử dụng coupon (hiện tại: %,d VND)",
+          String.format("Chi tiêu tối thiểu %,d,000 VND để sử dụng coupon (hiện tại: %,d,000 VND)",
               this.minSpend, spendAmount));
     }
 

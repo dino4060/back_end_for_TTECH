@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRepository;
+import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.CouponMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
@@ -26,6 +27,7 @@ import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CustomerCoupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.PromoType;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CustomerCouponRepository;
@@ -57,6 +59,58 @@ public class CouponService {
   UserRepository userRepo;
 
   CustomerCouponRepository customerCouponRepo;
+
+  @Transactional(readOnly = true)
+  public CouponApplyResult preview(
+      @AuthUser long customerId,
+      @RequestBody CouponBodyApply body) {
+
+    if (body.getId() == null && body.getCouponCode() == null) {
+      throw new BadRequestE("coupon.id or coupon.couponCode is required");
+
+    } else if (body.getId() != null) {
+      return couponRepo.findById(body.getId())
+          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
+          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy Coupon"));
+
+    } else {
+      return couponRepo.findByCouponCode(body.getCouponCode())
+          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
+          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy mã Coupon: " + body.getCouponCode()));
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public List<CouponApplyResult> previewClaims(
+      long customerId,
+      CouponBodyApply body) {
+
+    // preview coupon claims
+    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
+
+    var couponResults = this.customerCouponRepo.findAllByCustomer(customer).stream()
+        .map(couponClaim -> {
+          var coupon = couponClaim.getCoupon();
+          var couponResult = coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs());
+          return couponResult;
+        })
+        .filter(applyResult -> applyResult.getIsApplied())
+        .collect(Collectors.toList());
+
+    // Tìm Order Coupon tốt nhất (Max discountAmount)
+    var bestOrderCoupon = couponResults.stream()
+        .filter(r -> PromoType.ORDER_COUPON.toString().equals(r.getPromotionType()))
+        .max((a, b) -> a.getDiscountAmount().compareTo(b.getDiscountAmount()))
+        .orElse(CouponApplyResult.fail("No order coupon is applied"));
+
+    // Tìm Shipping Coupon tốt nhất (Max discountAmount)
+    var bestShippingCoupon = couponResults.stream()
+        .filter(r -> PromoType.SHIPPING_COUPON.toString().equals(r.getPromotionType()))
+        .max((a, b) -> a.getDiscountAmount().compareTo(b.getDiscountAmount()))
+        .orElse(CouponApplyResult.fail("No shipping coupon is applied"));
+
+    return List.of(bestOrderCoupon, bestShippingCoupon);
+  }
 
   @Transactional
   public void claim(long customerId, long couponId) {
@@ -111,26 +165,6 @@ public class CouponService {
     coupon.markAsUsed(customer.id());
   }
 
-  @Transactional(readOnly = true)
-  public CouponApplyResult preview(
-      @AuthUser long customerId,
-      @RequestBody CouponBodyApply body) {
-
-    if (body.getId() != null) {
-      return couponRepo.findById(body.getId())
-          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
-          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy Coupon"));
-    }
-
-    if (body.getCouponCode() != null) {
-      return couponRepo.findByCouponCode(body.getCouponCode())
-          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
-          .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy mã Coupon: " + body.getCouponCode()));
-    }
-
-    throw new BadRequestE("CouponBodyApply.id or .couponCode is required");
-  }
-
   /**
    * List applicable coupons for customer and product
    * 
@@ -146,6 +180,8 @@ public class CouponService {
         .and(CouponSpec.hasStatusIn(Set.of(Status.UPCOMING, Status.ONGOING)))
         .and(CouponSpec.hasAvailableSlots()));
 
+    User customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
+
     return coupons.stream()
         .peek(coupon -> this.refreshStatusAsync(coupon))
         .filter(coupon -> coupon.hasStatus(Status.ONGOING))
@@ -153,9 +189,7 @@ public class CouponService {
         .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
         .map(coupon -> {
           var data = couponMapper.toData(coupon);
-          var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
-          var isClaimed = this.customerCouponRepo.existsByCustomerAndCoupon(customer, coupon);
-          data.setIsClaimed(isClaimed);
+          data.setIsClaimed(this.customerCouponRepo.existsByCustomerAndCoupon(customer, coupon));
           return data;
         })
         .collect(Collectors.toList());
