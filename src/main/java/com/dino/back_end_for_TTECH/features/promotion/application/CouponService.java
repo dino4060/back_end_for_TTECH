@@ -1,5 +1,6 @@
 package com.dino.back_end_for_TTECH.features.promotion.application;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.dino.back_end_for_TTECH.features.product.domain.repository.ProductRepository;
+import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
 import com.dino.back_end_for_TTECH.features.promotion.application.mapper.CouponMapper;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBody;
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyApply;
@@ -22,13 +24,16 @@ import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponDa
 import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponUnitBody;
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
+import com.dino.back_end_for_TTECH.features.promotion.domain.CustomerCoupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
+import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CustomerCouponRepository;
 import com.dino.back_end_for_TTECH.features.promotion.domain.specification.CouponSpec;
 import com.dino.back_end_for_TTECH.shared.api.annotation.AuthUser;
 import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
 import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
+import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppMapper;
 
 import lombok.AccessLevel;
@@ -49,41 +54,43 @@ public class CouponService {
 
   ProductRepository productRepo;
 
-  /**
-   * List applicable coupons for customer and product
-   * 
-   * @param customer  Current authenticated customer
-   * @param productId Product ID to check coupon eligibility
-   * @return List of applicable coupons (only ONGOING status)
-   */
-  @Transactional
-  public List<CouponData> list(CurrentUser customer, Long productId) {
-    List<Coupon> coupons = couponRepo.findAll(Specification
-        .where(CouponSpec.forProduct(productId))
-        .and(CouponSpec.isClaimedCouponType())
-        .and(CouponSpec.hasStatusIn(Set.of(Status.UPCOMING, Status.ONGOING)))
-        .and(CouponSpec.hasAvailableSlots()));
+  UserRepository userRepo;
 
-    return coupons.stream()
-        .peek(coupon -> this.refreshStatusAsync(coupon))
-        .filter(coupon -> coupon.hasStatus(Status.ONGOING))
-        .filter(coupon -> coupon.hasCustomerQuota(customer.id()))
-        .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
-        .map(coupon -> couponMapper.toData(coupon))
-        .collect(Collectors.toList());
+  CustomerCouponRepository customerCouponRepo;
+
+  @Transactional
+  public void claim(long customerId, long couponId) {
+    Coupon coupon = couponRepo
+        .findById(couponId)
+        .orElseThrow(() -> new NotFoundE("Coupon not found"));
+
+    var customer = userRepo
+        .findById(customerId)
+        .orElseThrow(() -> new NotFoundE("Customer not found"));
+
+    if (customerCouponRepo.existsByCustomerAndCoupon(customer, coupon))
+      return;
+
+    var customerCoupon = new CustomerCoupon();
+    customerCoupon.setCustomer(customer);
+    customerCoupon.setCoupon(coupon);
+    customerCoupon.setClaimedAt(LocalDateTime.now());
+    customerCoupon.setExpiresAt(coupon.getValidityDays() == null
+        ? null
+        : LocalDateTime.now().plusDays(coupon.getValidityDays()));
+
+    customerCouponRepo.save(customerCoupon);
   }
 
-  /**
-   * Async update coupon status
-   * Coupons with UPCOMING status will be checked and updated if time has come
-   */
-  @Async
-  protected void refreshStatusAsync(Coupon coupon) {
-    boolean statusChanged = coupon.refreshStatus();
-    if (statusChanged) {
-      couponRepo.save(coupon);
-      log.debug("Updated coupon {} status to {}", coupon.getId(), coupon.getStatus());
-    }
+  @Transactional
+  public void unclaim(long customerId, long couponId) {
+    Coupon coupon = couponRepo.findById(couponId).orElseThrow(() -> new NotFoundE("Coupon not found"));
+
+    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
+
+    customerCouponRepo
+        .findByCustomerAndCoupon(customer, coupon)
+        .ifPresent(c -> customerCouponRepo.delete(c));
   }
 
   @Transactional
@@ -106,22 +113,65 @@ public class CouponService {
 
   @Transactional(readOnly = true)
   public CouponApplyResult preview(
-      @AuthUser CurrentUser customer,
+      @AuthUser long customerId,
       @RequestBody CouponBodyApply body) {
 
     if (body.getId() != null) {
       return couponRepo.findById(body.getId())
-          .map(coupon -> coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs()))
+          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
           .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy Coupon"));
     }
 
     if (body.getCouponCode() != null) {
       return couponRepo.findByCouponCode(body.getCouponCode())
-          .map(coupon -> coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs()))
+          .map(coupon -> coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs()))
           .orElseGet(() -> CouponApplyResult.fail("Không tìm thấy mã Coupon: " + body.getCouponCode()));
     }
 
     throw new BadRequestE("CouponBodyApply.id or .couponCode is required");
+  }
+
+  /**
+   * List applicable coupons for customer and product
+   * 
+   * @param customerId Current authenticated customer
+   * @param productId  Product ID to check coupon eligibility
+   * @return List of applicable coupons (only ONGOING status)
+   */
+  @Transactional
+  public List<CouponData> list(long customerId, Long productId) {
+    List<Coupon> coupons = couponRepo.findAll(Specification
+        .where(CouponSpec.forProduct(productId))
+        .and(CouponSpec.isClaimedCouponType())
+        .and(CouponSpec.hasStatusIn(Set.of(Status.UPCOMING, Status.ONGOING)))
+        .and(CouponSpec.hasAvailableSlots()));
+
+    return coupons.stream()
+        .peek(coupon -> this.refreshStatusAsync(coupon))
+        .filter(coupon -> coupon.hasStatus(Status.ONGOING))
+        .filter(coupon -> coupon.hasCustomerQuota(customerId))
+        .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
+        .map(coupon -> {
+          var data = couponMapper.toData(coupon);
+          var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
+          var isClaimed = this.customerCouponRepo.existsByCustomerAndCoupon(customer, coupon);
+          data.setIsClaimed(isClaimed);
+          return data;
+        })
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Async update coupon status
+   * Coupons with UPCOMING status will be checked and updated if time has come
+   */
+  @Async
+  protected void refreshStatusAsync(Coupon coupon) {
+    boolean statusChanged = coupon.refreshStatus();
+    if (statusChanged) {
+      couponRepo.save(coupon);
+      log.debug("Updated coupon {} status to {}", coupon.getId(), coupon.getStatus());
+    }
   }
 
   public CouponData get(long id) {

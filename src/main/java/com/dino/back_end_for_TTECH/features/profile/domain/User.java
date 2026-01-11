@@ -31,100 +31,101 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class User extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(name = "user_id")
-    Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  @Column(name = "user_id")
+  Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    UserStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  UserStatus status;
 
-    String name;
+  String name;
 
-    @Column(nullable = false, unique = true)
-    String username;
+  @Column(nullable = false, unique = true)
+  String username;
 
-    @Column(unique = true)
-    String email;
+  @Column(unique = true)
+  String email;
 
-    @Column(unique = true)
-    String phone;
+  @Column(unique = true)
+  String phone;
 
-    String password;
+  String password;
 
-    Integer provinceId;
+  Integer provinceId;
 
-    Integer wardId;
+  Integer wardId;
 
-    String street;
+  String street;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    Set<Role> roles;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  Set<Role> roles;
 
-    @OneToMany(mappedBy = "buyer", fetch = FetchType.LAZY)
-    @JsonIgnore
-    @ToString.Exclude
-    List<Order> orders;
+  @OneToMany(mappedBy = "buyer", fetch = FetchType.LAZY)
+  @JsonIgnore
+  @ToString.Exclude
+  List<Order> orders;
 
-    // FACTORY //
+  // FACTORY //
 
-    public User (Long id) {
-        var user = new User();
-        user.setId(id);
-    }
+  public User(long id) {
+    var user = new User();
+    user.setId(id);
+  }
 
-    public static User createCustomer(String name, String email, String phone, String passHashed) {
-        User user = new User();
+  public static User createCustomer(String name, String email, String phone, String passHashed) {
+    User user = new User();
 
-        user.setStatus(UserStatus.LIVE);
-        user.setName(name);
-        user.setUsername("user" + System.currentTimeMillis());
-        user.setEmail(email);
-        user.setPhone(phone);
-        user.setPassword(passHashed);
-        user.addRole(Role.CUSTOMER);
+    user.setStatus(UserStatus.LIVE);
+    user.setName(name);
+    user.setUsername("user" + System.currentTimeMillis());
+    user.setEmail(email);
+    user.setPhone(phone);
+    user.setPassword(passHashed);
+    user.addRole(Role.CUSTOMER);
 
-        return user;
-    }
+    return user;
+  }
 
-    public static User createThirdCustomer(String name, String email) {
-        User user = new User();
+  public static User createThirdCustomer(String name, String email) {
+    User user = new User();
 
-        user.setStatus(UserStatus.LIVE);
-        user.setName(name);
-        user.setUsername("user" + System.currentTimeMillis());
-        user.setEmail(email);
-        user.addRole(Role.CUSTOMER);
+    user.setStatus(UserStatus.LIVE);
+    user.setName(name);
+    user.setUsername("user" + System.currentTimeMillis());
+    user.setEmail(email);
+    user.addRole(Role.CUSTOMER);
 
-        return user;
-    }
+    return user;
+  }
 
-    public static User createAdmin(String username, String email, String passHashed) {
-        User user = new User();
+  public static User createAdmin(String username, String email, String passHashed) {
+    User user = new User();
 
-        user.setStatus(UserStatus.LIVE);
-        user.setName("Top 1 server at TTECH");
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setPassword(passHashed);
-        user.addRole(Role.ADMIN);
+    user.setStatus(UserStatus.LIVE);
+    user.setName("Top 1 server at TTECH");
+    user.setUsername(username);
+    user.setEmail(email);
+    user.setPassword(passHashed);
+    user.addRole(Role.ADMIN);
 
-        return user;
-    }
+    return user;
+  }
 
-    // INSTANCE //
+  // INSTANCE //
 
-    public void updateCustomer(String name, String email, String phone) {
-        this.setName(name);
-        this.setEmail(email);
-        this.setPhone(phone);
-    }
+  public void updateCustomer(String name, String email, String phone) {
+    this.setName(name);
+    this.setEmail(email);
+    this.setPhone(phone);
+  }
 
-    public void addRole(Role role) {
-        boolean isNull = AppCheck.isNull(this.getRoles());
-        if (isNull) this.setRoles(new HashSet<>());
-        this.getRoles().add(role);
-    }
+  public void addRole(Role role) {
+    boolean isNull = AppCheck.isNull(this.getRoles());
+    if (isNull)
+      this.setRoles(new HashSet<>());
+    this.getRoles().add(role);
+  }
 }

@@ -32,4 +32,6 @@ public class CouponData extends CampaignData {
   Boolean isApplyAll;
 
   List<CouponUnitData> units;
+
+  Boolean isClaimed = false;
 }
