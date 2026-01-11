@@ -1,9 +1,11 @@
 package com.dino.back_end_for_TTECH.features.promotion.api;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dino.back_end_for_TTECH.features.promotion.application.CouponService;
@@ -23,7 +25,16 @@ public class CouponController {
 
   CouponService service;
 
-  @PostMapping("/preview")
+  @GetMapping
+  public ResponseEntity<?> list(
+      @AuthUser CurrentUser user,
+      @RequestParam("product-id") Long productId) {
+
+    var data = this.service.list(user, productId);
+    return ResponseEntity.ok(data);
+  }
+
+  @PostMapping
   public ResponseEntity<?> preview(
       @AuthUser CurrentUser user,
       @RequestBody CouponBodyApply body) {

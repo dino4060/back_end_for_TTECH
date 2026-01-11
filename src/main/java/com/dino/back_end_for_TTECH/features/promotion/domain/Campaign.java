@@ -50,7 +50,7 @@ public class Campaign extends BaseEntity implements BaseStatus<Status> {
 
   String status;
 
-  public boolean syncStatus() {
+  public boolean refreshStatus() {
     // Bypass DEACTIVATED
     if (hasStatus(Status.DEACTIVATED))
       return false;

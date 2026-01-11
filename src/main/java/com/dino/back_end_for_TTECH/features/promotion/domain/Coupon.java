@@ -167,6 +167,22 @@ public class Coupon extends Campaign {
   }
 
   /**
+   * Check if customer has remaining usage quota for coupon
+   * 
+   * @param coupon     Coupon to check
+   * @param customerId Customer ID
+   * @return true if customer can still use this coupon
+   */
+  public boolean hasCustomerQuota(Long customerId) {
+    if (this.getLimitPerCustomer() == null)
+      return true;
+
+    Integer customerUsage = this.getCountPerCustomer().getOrDefault(customerId, 0);
+
+    return customerUsage < this.getLimitPerCustomer();
+  }
+
+  /**
    * Calculate discount amount based on coupon type (fixed or percentage)
    */
   private Integer calculateDiscount(Integer spendAmount) {
@@ -233,7 +249,7 @@ public class Coupon extends Campaign {
    * - Clear max discount if fixed discount
    */
   public void processIntegrity() {
-    this.syncStatus();
+    this.refreshStatus();
     this.processCouponType();
     this.processCouponCode();
     this.processMaxDiscount();

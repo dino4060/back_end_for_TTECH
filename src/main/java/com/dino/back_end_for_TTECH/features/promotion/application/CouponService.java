@@ -2,8 +2,11 @@ package com.dino.back_end_for_TTECH.features.promotion.application;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +23,9 @@ import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponUn
 import com.dino.back_end_for_TTECH.features.promotion.domain.Coupon;
 import com.dino.back_end_for_TTECH.features.promotion.domain.CouponUnit;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
+import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CouponRepository;
+import com.dino.back_end_for_TTECH.features.promotion.domain.specification.CouponSpec;
 import com.dino.back_end_for_TTECH.shared.api.annotation.AuthUser;
 import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
 import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
@@ -44,31 +49,45 @@ public class CouponService {
 
   ProductRepository productRepo;
 
+  /**
+   * List applicable coupons for customer and product
+   * 
+   * @param customer  Current authenticated customer
+   * @param productId Product ID to check coupon eligibility
+   * @return List of applicable coupons (only ONGOING status)
+   */
   @Transactional
-  public CouponApplyResult applyCoupon(
-      @AuthUser CurrentUser customer,
-      @RequestBody CouponBodyApply body) {
+  public List<CouponData> list(CurrentUser customer, Long productId) {
+    List<Coupon> coupons = couponRepo.findAll(Specification
+        .where(CouponSpec.forProduct(productId))
+        .and(CouponSpec.isClaimedCouponType())
+        .and(CouponSpec.hasStatusIn(Set.of(Status.UPCOMING, Status.ONGOING)))
+        .and(CouponSpec.hasAvailableSlots()));
 
-    // Find coupon by code
-    Coupon coupon = couponRepo
-        .findByCouponCode(body.getCouponCode())
-        .orElseThrow(() -> new BadRequestE("Invalid coupon code"));
+    return coupons.stream()
+        .peek(coupon -> this.refreshStatusAsync(coupon))
+        .filter(coupon -> coupon.hasStatus(Status.ONGOING))
+        .filter(coupon -> coupon.hasCustomerQuota(customer.id()))
+        .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
+        .map(coupon -> couponMapper.toData(coupon))
+        .collect(Collectors.toList());
+  }
 
-    // Check if coupon can be applied
-    CouponApplyResult result = coupon.canApply(customer.id(), body.getSpendAmount(), body.getProductIDs());
-
-    if (!result.getIsApplied()) {
-      return result;
+  /**
+   * Async update coupon status
+   * Coupons with UPCOMING status will be checked and updated if time has come
+   */
+  @Async
+  protected void refreshStatusAsync(Coupon coupon) {
+    boolean statusChanged = coupon.refreshStatus();
+    if (statusChanged) {
+      couponRepo.save(coupon);
+      log.debug("Updated coupon {} status to {}", coupon.getId(), coupon.getStatus());
     }
-
-    // Mark as used (will be saved when transaction commits)
-    coupon.markAsUsed(customer.id());
-
-    return result;
   }
 
   @Transactional
-  public void applyCoupon(
+  public void apply(
       @AuthUser CurrentUser customer,
       @RequestBody CouponApplyResult appliedCoupon) {
 

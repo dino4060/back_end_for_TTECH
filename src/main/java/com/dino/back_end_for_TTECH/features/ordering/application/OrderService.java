@@ -74,7 +74,7 @@ public class OrderService {
   }
 
   public OrderData checkout(OrderBody body, CurrentUser user) {
-    couponService.applyCoupon(user, body.getCouponCode());
+    couponService.apply(user, body.getCouponCode());
 
     var newOrder = this.orderMapper.toModel(body);
     newOrder.setBuyer(user.toUser());
