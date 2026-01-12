@@ -14,6 +14,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,15 +54,19 @@ public class User extends BaseEntity {
 
   String password;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  Set<Role> roles;
+
   Integer provinceId;
 
   Integer wardId;
 
   String street;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  Set<Role> roles;
+  Integer points;
+
+  List<LocalDateTime> membershipHistory;
 
   @OneToMany(mappedBy = "buyer", fetch = FetchType.LAZY)
   @JsonIgnore
