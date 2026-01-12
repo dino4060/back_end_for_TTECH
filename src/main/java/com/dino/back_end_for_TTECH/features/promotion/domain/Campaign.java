@@ -50,29 +50,29 @@ public class Campaign extends BaseEntity implements BaseStatus<Status> {
 
   String status;
 
-  public boolean refreshStatus() {
+  public boolean hasNewStatus() {
     // Bypass DEACTIVATED
     if (hasStatus(Status.DEACTIVATED))
       return false;
 
     LocalDateTime now = LocalDateTime.now();
     Status newStatus;
-
-    // UPCOMING: Today < StartTime
-    // ENDED: Today > EndTime
-    // ONGOING: StartTime < Today < EndTime
-    if (now.isBefore(startTime))
+    // Process
+    if (now.isBefore(startTime)) {
       newStatus = Status.UPCOMING;
-    else if (now.isAfter(endTime))
-      newStatus = Status.ENDED;
-    else
-      newStatus = Status.ONGOING;
 
+    } else if (now.isAfter(endTime)) {
+      newStatus = Status.ENDED;
+
+    } else {
+      newStatus = Status.ONGOING;
+    }
     // Bypass same status
-    if (hasStatus(newStatus))
+    if (hasStatus(newStatus)) {
       return false;
+    }
 
     this.setStatus(newStatus);
-    return false;
+    return true;
   }
 }

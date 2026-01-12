@@ -261,7 +261,7 @@ public class Coupon extends Campaign {
    * - Clear max discount if fixed discount
    */
   public void processIntegrity() {
-    this.refreshStatus();
+    this.hasNewStatus();
     this.processCouponType();
     this.processCouponCode();
     this.processMaxDiscount();

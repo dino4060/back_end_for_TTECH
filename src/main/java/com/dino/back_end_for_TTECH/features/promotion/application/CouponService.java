@@ -86,7 +86,7 @@ public class CouponService {
 
     var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    var couponResults = this.customerCouponRepo.findAllByCustomer(customer).stream()
+    var couponResults = this.customerCouponRepo.findByCustomer(customer).stream()
         .filter(claim -> !claim.isExpired())
         .map(claim -> {
           var coupon = claim.getCoupon();
@@ -132,9 +132,7 @@ public class CouponService {
 
     var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    customerCouponRepo
-        .findByCustomerAndCoupon(customer, coupon)
-        .ifPresent(c -> customerCouponRepo.delete(c));
+    customerCouponRepo.deleteByCustomerAndCoupon(customer, coupon);
   }
 
   @Transactional
@@ -170,19 +168,19 @@ public class CouponService {
     User customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
     return coupons.stream()
-        .peek(coupon -> this.refreshStatusAsync(coupon))
+        .peek(coupon -> hasNewStatusWithUpdate(coupon))
         .filter(coupon -> coupon.hasStatus(Status.ONGOING))
         .filter(coupon -> coupon.hasCustomerQuota(customerId))
         .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
         .map(coupon -> {
           var data = couponMapper.toData(coupon);
-          data.setIsClaimed(isClaimedOrCleanup(customer, coupon));
+          data.setIsClaimed(isClaimedWithCleanup(customer, coupon));
           return data;
         })
         .collect(Collectors.toList());
   }
 
-  private boolean isClaimedOrCleanup(User customer, Coupon coupon) {
+  private boolean isClaimedWithCleanup(User customer, Coupon coupon) {
     var claim = customerCouponRepo.findByCustomerAndCoupon(customer, coupon).orElse(null);
     if (claim == null) {
       return false;
@@ -194,17 +192,22 @@ public class CouponService {
     return true;
   }
 
+  private boolean hasNewStatusWithUpdate(Coupon coupon) {
+    if (!coupon.hasNewStatus()) {
+      return false;
+    }
+    this.saveAsync(coupon);
+    return true;
+  }
+
   @Async
   private void deleteClaimAsync(CustomerCoupon claim) {
     customerCouponRepo.delete(claim);
   }
 
   @Async
-  protected void refreshStatusAsync(Coupon coupon) {
-    boolean hasChange = coupon.refreshStatus();
-    if (hasChange) {
-      couponRepo.save(coupon);
-    }
+  private void saveAsync(Coupon coupon) {
+    couponRepo.save(coupon);
   }
 
   public CouponData get(long id) {

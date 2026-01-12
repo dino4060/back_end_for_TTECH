@@ -23,7 +23,7 @@ public class CampaignHelper {
   CampaignRepository campaignRepo;
 
   public void saveSyncStatus(Campaign campaign) {
-    var isSync = campaign.refreshStatus();
+    var isSync = campaign.hasNewStatus();
     if (isSync == true) {
       campaignRepo.save(campaign);
     }

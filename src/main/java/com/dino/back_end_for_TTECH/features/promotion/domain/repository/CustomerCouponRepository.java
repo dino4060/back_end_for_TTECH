@@ -14,12 +14,14 @@ public interface CustomerCouponRepository extends BaseRepository<CustomerCoupon,
 
   Optional<CustomerCoupon> findByCustomerAndCoupon(User customer, Coupon coupon);
 
+  @EntityGraph(attributePaths = { "coupon" })
+  Set<CustomerCoupon> findByCustomer(User customer);
+
   boolean existsByCustomerAndCoupon(User customer, Coupon coupon);
 
   boolean existsByCoupon(Coupon coupon);
 
-  @EntityGraph(attributePaths = { "coupon" })
-  Set<CustomerCoupon> findAllByCustomer(User customer);
+  void deleteByCustomerAndCoupon(User customer, Coupon coupon);
 
   @Override
   default String customModelName() {
