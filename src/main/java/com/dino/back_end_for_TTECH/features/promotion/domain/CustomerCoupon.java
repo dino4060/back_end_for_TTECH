@@ -50,4 +50,15 @@ public class CustomerCoupon extends BaseEntity {
   LocalDateTime claimedAt;
 
   LocalDateTime expiresAt;
+
+  public static CustomerCoupon create() {
+    return new CustomerCoupon();
+  }
+
+  public boolean isExpired() {
+    if (this.expiresAt == null)
+      return false;
+
+    return LocalDateTime.now().isAfter(this.expiresAt);
+  }
 }

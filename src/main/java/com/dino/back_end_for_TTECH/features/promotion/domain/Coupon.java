@@ -12,6 +12,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 
+import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.PromoType;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
@@ -79,11 +80,14 @@ public class Coupon extends Campaign {
   @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   List<CouponUnit> units = new ArrayList<>();
 
+  Boolean isDeletedChild = false;
+
+  @OneToMany(mappedBy = "coupon", fetch = FetchType.LAZY)
+  List<CustomerCoupon> customerCoupons = new ArrayList<>();
+
   public Coupon(long id) {
     this.id = id;
   }
-
-  Boolean isDeletedChild = false;
 
   /**
    * Check if coupon can be applied to the order
@@ -202,6 +206,19 @@ public class Coupon extends Campaign {
     }
 
     return discount;
+  }
+
+  public CustomerCoupon claimBy(User customer) {
+    var claim = new CustomerCoupon();
+    claim.setCustomer(customer);
+    claim.setCoupon(this);
+    claim.setClaimedAt(LocalDateTime.now());
+
+    if (this.validityDays != null) {
+      claim.setExpiresAt(LocalDateTime.now().plusDays(this.validityDays));
+    }
+
+    return claim;
   }
 
   /**

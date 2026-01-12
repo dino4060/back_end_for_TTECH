@@ -1,6 +1,5 @@
 package com.dino.back_end_for_TTECH.features.promotion.application;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,16 +84,16 @@ public class CouponService {
       long customerId,
       CouponBodyApply body) {
 
-    // preview coupon claims
     var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
     var couponResults = this.customerCouponRepo.findAllByCustomer(customer).stream()
-        .map(couponClaim -> {
-          var coupon = couponClaim.getCoupon();
+        .filter(claim -> !claim.isExpired())
+        .map(claim -> {
+          var coupon = claim.getCoupon();
           var couponResult = coupon.canApply(customerId, body.getSpendAmount(), body.getProductIDs());
           return couponResult;
         })
-        .filter(applyResult -> applyResult.getIsApplied())
+        .filter(couponResult -> couponResult.getIsApplied())
         .collect(Collectors.toList());
 
     // Tìm Order Coupon tốt nhất (Max discountAmount)
@@ -114,24 +113,15 @@ public class CouponService {
 
   @Transactional
   public void claim(long customerId, long couponId) {
-    Coupon coupon = couponRepo
-        .findById(couponId)
-        .orElseThrow(() -> new NotFoundE("Coupon not found"));
+    Coupon coupon = couponRepo.findById(couponId).orElseThrow(() -> new NotFoundE("Coupon not found"));
 
-    var customer = userRepo
-        .findById(customerId)
-        .orElseThrow(() -> new NotFoundE("Customer not found"));
+    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    if (customerCouponRepo.existsByCustomerAndCoupon(customer, coupon))
+    if (customerCouponRepo.existsByCustomerAndCoupon(customer, coupon)) {
       return;
+    }
 
-    var customerCoupon = new CustomerCoupon();
-    customerCoupon.setCustomer(customer);
-    customerCoupon.setCoupon(coupon);
-    customerCoupon.setClaimedAt(LocalDateTime.now());
-    customerCoupon.setExpiresAt(coupon.getValidityDays() == null
-        ? null
-        : LocalDateTime.now().plusDays(coupon.getValidityDays()));
+    var customerCoupon = coupon.claimBy(customer);
 
     customerCouponRepo.save(customerCoupon);
   }
@@ -156,10 +146,7 @@ public class CouponService {
       return;
     }
 
-    // Find coupon by code
-    Coupon coupon = couponRepo
-        .findById(appliedCoupon.getId())
-        .orElseThrow(() -> new BadRequestE("Coupon not found"));
+    Coupon coupon = couponRepo.findById(appliedCoupon.getId()).orElseThrow(() -> new BadRequestE("Coupon not found"));
 
     // Mark as used (will be saved when transaction commits)
     coupon.markAsUsed(customer.id());
@@ -189,22 +176,34 @@ public class CouponService {
         .sorted((coupon, second) -> coupon.getDiscountValue().compareTo(second.getDiscountValue()))
         .map(coupon -> {
           var data = couponMapper.toData(coupon);
-          data.setIsClaimed(this.customerCouponRepo.existsByCustomerAndCoupon(customer, coupon));
+          data.setIsClaimed(isClaimedOrCleanup(customer, coupon));
           return data;
         })
         .collect(Collectors.toList());
   }
 
-  /**
-   * Async update coupon status
-   * Coupons with UPCOMING status will be checked and updated if time has come
-   */
+  private boolean isClaimedOrCleanup(User customer, Coupon coupon) {
+    var claim = customerCouponRepo.findByCustomerAndCoupon(customer, coupon).orElse(null);
+    if (claim == null) {
+      return false;
+    }
+    if (claim.isExpired()) {
+      this.deleteClaimAsync(claim);
+      return false;
+    }
+    return true;
+  }
+
+  @Async
+  private void deleteClaimAsync(CustomerCoupon claim) {
+    customerCouponRepo.delete(claim);
+  }
+
   @Async
   protected void refreshStatusAsync(Coupon coupon) {
-    boolean statusChanged = coupon.refreshStatus();
-    if (statusChanged) {
+    boolean hasChange = coupon.refreshStatus();
+    if (hasChange) {
       couponRepo.save(coupon);
-      log.debug("Updated coupon {} status to {}", coupon.getId(), coupon.getStatus());
     }
   }
 
@@ -218,6 +217,10 @@ public class CouponService {
 
   @Transactional
   public void delete(Coupon coupon) {
+    if (customerCouponRepo.existsByCoupon(coupon)) {
+      throw new BadRequestE("Cannot delete the used coupon with ID: " + coupon.getId());
+    }
+
     this.couponRepo.delete(coupon);
   }
 
