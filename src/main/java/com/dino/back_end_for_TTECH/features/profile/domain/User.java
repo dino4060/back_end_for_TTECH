@@ -1,23 +1,39 @@
 package com.dino.back_end_for_TTECH.features.profile.domain;
 
-import com.dino.back_end_for_TTECH.features.profile.domain.model.Role;
-import com.dino.back_end_for_TTECH.features.profile.domain.model.UserStatus;
-import com.dino.back_end_for_TTECH.features.ordering.domain.Order;
-import com.dino.back_end_for_TTECH.shared.application.utils.AppCheck;
-import com.dino.back_end_for_TTECH.shared.domain.model.BaseEntity;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.dino.back_end_for_TTECH.features.ordering.domain.Order;
+import com.dino.back_end_for_TTECH.features.profile.domain.model.Role;
+import com.dino.back_end_for_TTECH.features.profile.domain.model.UserStatus;
+import com.dino.back_end_for_TTECH.shared.application.utils.AppCheck;
+import com.dino.back_end_for_TTECH.shared.domain.model.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.var;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "users")
@@ -63,10 +79,6 @@ public class User extends BaseEntity {
   Integer wardId;
 
   String street;
-
-  Integer points;
-
-  List<LocalDateTime> membershipHistory;
 
   @OneToMany(mappedBy = "buyer", fetch = FetchType.LAZY)
   @JsonIgnore

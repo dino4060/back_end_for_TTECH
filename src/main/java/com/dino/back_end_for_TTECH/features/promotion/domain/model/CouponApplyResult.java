@@ -21,6 +21,10 @@ public class CouponApplyResult {
     return new CouponApplyResult(true, promoType, id, couponCode, discountAmount, "Coupon applied successfully");
   }
 
+  public static CouponApplyResult success(String message, String promoType, Long id, Integer discountAmount) {
+    return new CouponApplyResult(true, promoType, id, null, discountAmount, message);
+  }
+
   public static CouponApplyResult fail(String message) {
     return new CouponApplyResult(false, null, null, null, 0, message);
   }

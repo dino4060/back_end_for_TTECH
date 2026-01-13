@@ -1,10 +1,17 @@
 package com.dino.back_end_for_TTECH.features.membership.domain;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Type;
 
+import com.dino.back_end_for_TTECH.features.membership.domain.model.ApplyResult;
+import com.dino.back_end_for_TTECH.features.membership.domain.model.BenefitUnit;
 import com.dino.back_end_for_TTECH.shared.domain.model.BaseEntity;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -54,4 +61,41 @@ public class Benefit extends BaseEntity {
   Integer minSpend;
 
   Integer validityMonths;
+
+  Integer limitPerCustomer;
+
+  @Type(JsonType.class)
+  @Column(columnDefinition = "jsonb")
+  Map<Long, Integer> countPerCustomer = new HashMap<>();
+
+  public ApplyResult canApply(Long customerId, Integer spendAmount) {
+    // 1. Kiểm tra số lần sử dụng cho mỗi khách hàng
+    if (customerId != null && this.limitPerCustomer != null) {
+      Integer usage = this.countPerCustomer.getOrDefault(customerId, 0);
+      if (usage >= this.limitPerCustomer) {
+        return ApplyResult.fail("Bạn đã hết lượt sử dụng đặc quyền");
+      }
+    }
+
+    // 2. Kiểm tra chi tiêu tối thiểu
+    if (this.minSpend != null && spendAmount < this.minSpend) {
+      return ApplyResult.fail(String.format("Cần chi tiêu tối thiểu %,d,000 VND", this.minSpend));
+    }
+
+    // 3. Tính toán benefit value
+    Integer benefitValue = 0;
+    if (BenefitUnit.PERCENT.toString().equals(this.benefitUnit)) {
+      benefitValue = (spendAmount * this.benefitValue) / 100;
+    } else if (BenefitUnit.FIXED.toString().equals(this.benefitUnit)) {
+      benefitValue = this.benefitValue;
+    } else if (BenefitUnit.MONTHS.toString().equals(this.benefitUnit)) {
+      benefitValue = this.benefitValue;
+    }
+
+    return ApplyResult.success(
+        this.getId(),
+        this.getBenefitType(),
+        this.getBenefitName(),
+        benefitValue);
+  }
 }

@@ -67,9 +67,9 @@ public class Coupon extends Campaign {
 
   Integer totalLimit;
 
-  Integer limitPerCustomer;
-
   Integer usedCount = 0;
+
+  Integer limitPerCustomer;
 
   @Type(JsonType.class)
   @Column(columnDefinition = "jsonb")
