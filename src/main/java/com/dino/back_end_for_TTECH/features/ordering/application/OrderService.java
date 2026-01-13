@@ -1,5 +1,10 @@
 package com.dino.back_end_for_TTECH.features.ordering.application;
 
+import java.time.Instant;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.dino.back_end_for_TTECH.features.membership.application.BenefitService;
 import com.dino.back_end_for_TTECH.features.membership.application.MemberService;
 import com.dino.back_end_for_TTECH.features.ordering.application.mapper.OrderMapper;
@@ -9,25 +14,21 @@ import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderEdit
 import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderQuery;
 import com.dino.back_end_for_TTECH.features.ordering.domain.Order;
 import com.dino.back_end_for_TTECH.features.ordering.domain.OrderLine;
-import com.dino.back_end_for_TTECH.features.ordering.domain.model.PaymentType;
 import com.dino.back_end_for_TTECH.features.ordering.domain.model.OrderStatus;
+import com.dino.back_end_for_TTECH.features.ordering.domain.model.PaymentType;
 import com.dino.back_end_for_TTECH.features.ordering.domain.repository.OrderRepository;
 import com.dino.back_end_for_TTECH.features.ordering.domain.specification.OrderSpecification;
 import com.dino.back_end_for_TTECH.features.promotion.application.CouponService;
 import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
 import com.dino.back_end_for_TTECH.shared.application.exception.ModelNotFoundE;
-import com.dino.back_end_for_TTECH.shared.application.exception.ModelForbiddenE;
 import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 import com.dino.back_end_for_TTECH.shared.application.model.PageData;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppPage;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
 
 @Service
 @AllArgsConstructor
@@ -124,9 +125,9 @@ public class OrderService {
         .findById(body.getId())
         .orElseThrow(() -> new ModelNotFoundE("Order"));
 
-    if (!editOrder.getBuyer().getId().equals(buyer.id())) {
-      throw new ModelForbiddenE("Order");
-    }
+    // if (!editOrder.getBuyer().getId().equals(buyer.id())) {
+    // throw new ModelForbiddenE("Order");
+    // }
 
     if (body.getStatus() != null) {
       editOrder.setStatus(body.getStatus());

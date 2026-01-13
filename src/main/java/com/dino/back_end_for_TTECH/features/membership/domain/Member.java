@@ -74,16 +74,22 @@ public class Member extends BaseEntity implements BaseStatus<MemberStatus> {
 
     int oldLevel = this.getMembership().getMinPoint();
     int newLevel = newMembship.getMinPoint();
-    MemberStatus newStatus = newLevel > oldLevel
-        ? MemberStatus.UPGRADE
-        : newLevel == oldLevel
-            ? MemberStatus.RENEW
-            : MemberStatus.DOWNGRADE;
+    MemberStatus newStatus = null;
+    if (newLevel != oldLevel) {
+      newStatus = newLevel > oldLevel
+          ? MemberStatus.UPGRADE
+          : MemberStatus.DOWNGRADE;
+    } else if (!this.isEffective()) {
+      newStatus = MemberStatus.RENEW;
+    }
 
     this.setPoints(newPoints);
     this.setMembership(newMembship);
     this.setRankedAt(LocalDateTime.now());
-    this.setStatus(newStatus);
+    if (newStatus != null) {
+      this.setStatus(newStatus);
+    }
+
   }
 
   public boolean isEffective() {

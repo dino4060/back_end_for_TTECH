@@ -10,31 +10,32 @@ import java.util.List;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderData {
-    int id;
+  int id;
 
-    int allPrice;
-    int allDiscount;
-    int shippingFee;
-    int total;
+  int allPrice;
+  int allDiscount;
+  int shippingFee;
+  int total;
 
-    String note;
-    String paymentType;
+  String note;
+  String paymentType;
+  List<String> giftTexts;
 
-    String toUserName;
-    String toPhone;
-    Integer toProvinceId;
-    Integer toWardId;
-    String toStreet;
+  String toUserName;
+  String toPhone;
+  Integer toProvinceId;
+  Integer toWardId;
+  String toStreet;
 
-    String fromUserName;
-    String fromPhone;
-    Integer fromProvinceId;
-    Integer fromWardId;
-    String fromStreet;
+  String fromUserName;
+  String fromPhone;
+  Integer fromProvinceId;
+  Integer fromWardId;
+  String fromStreet;
 
-    String status;
-    Instant orderTime;
-    String parcelCode;
+  String status;
+  Instant orderTime;
+  String parcelCode;
 
-    List<OrderLineData> lines;
+  List<OrderLineData> lines;
 }

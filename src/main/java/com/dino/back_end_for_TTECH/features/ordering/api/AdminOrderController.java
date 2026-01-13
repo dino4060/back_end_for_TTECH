@@ -2,8 +2,13 @@ package com.dino.back_end_for_TTECH.features.ordering.api;
 
 import com.dino.back_end_for_TTECH.features.ordering.application.OrderService;
 import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderData;
+import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderEditBody;
 import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderQuery;
+import com.dino.back_end_for_TTECH.shared.api.annotation.AuthUser;
+import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppPage;
+
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,6 +18,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,16 +29,23 @@ import org.springframework.web.bind.annotation.RestController;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminOrderController {
 
-    OrderService orderService;
+  OrderService orderService;
 
-    @GetMapping
-    public ResponseEntity<AppPage<OrderData>> list(
-            @PageableDefault(
-                    page = 0, size = 50, sort = "id", direction = Sort.Direction.DESC
-            ) Pageable pageable,
-            @ModelAttribute OrderQuery query
-    ) {
-        var result = this.orderService.list(query, pageable);
-        return ResponseEntity.ok(result);
-    }
+  @GetMapping
+  public ResponseEntity<AppPage<OrderData>> list(
+      @PageableDefault(page = 0, size = 50, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
+      @ModelAttribute OrderQuery query) {
+
+    var result = this.orderService.list(query, pageable);
+    return ResponseEntity.ok(result);
+  }
+
+  @PatchMapping
+  public ResponseEntity<?> edit(
+      @Valid @RequestBody OrderEditBody body,
+      @AuthUser CurrentUser user) {
+
+    var data = this.orderService.editPartially(body, user);
+    return ResponseEntity.ok(data);
+  }
 }
