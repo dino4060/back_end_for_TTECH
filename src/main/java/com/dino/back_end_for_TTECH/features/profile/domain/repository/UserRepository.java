@@ -1,5 +1,6 @@
 package com.dino.back_end_for_TTECH.features.profile.domain.repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -26,18 +27,18 @@ public interface UserRepository extends
   Optional<User> findByUsername(String username);
 
   @Query("""
-      SELECT COALESCE(SUM(o.totalPayment), 0)
+      SELECT COALESCE(SUM(o.total), 0)
       FROM Order o
       WHERE o.buyer.id = :customerId
       AND o.createdAt >= :fromDate
       """)
-  Integer sumPaymentByCustomerWithin6Months(
+  Long sumPaymentByCustomerWithin6Months(
       @Param("customerId") Long customerId,
       @Param("fromDate") LocalDateTime fromDate);
 
-  @Query("SELECT SUM(o.totalAmount) FROM Order o " +
+  @Query("SELECT SUM(o.total) FROM Order o " +
       "WHERE o.buyer = :customer " +
-      // "AND o.status = 'COMPLETED' " + // Chỉ tính các đơn đã hoàn thành
+      // "AND o.status = 'COMPLETED' "
       "AND o.createdAt >= :since")
-  Integer sumPaymentByCustomerSince(User customer, LocalDateTime since);
+  Integer sumPaymentByCustomerSince(User customer, Instant since);
 }

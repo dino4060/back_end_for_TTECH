@@ -54,19 +54,19 @@ public class BenefitService {
         .filter(r -> r.getIsApplied())
         .collect(Collectors.toList());
 
-    var bestUp = findBest(appliedResults, BenefitType.UP);
+    var bestUpgrade = findBest(appliedResults, BenefitType.UPGRAGE);
     var bestRenew = findBest(appliedResults, BenefitType.RENEW);
     var bestCoupon = findBest(appliedResults, BenefitType.COUPON);
     var bestGuarantee = findBest(appliedResults, BenefitType.GUARANTEE);
 
-    return List.of(bestUp, bestRenew, bestCoupon, bestGuarantee);
+    return List.of(bestUpgrade, bestRenew, bestCoupon, bestGuarantee);
   }
 
   private ApplyResult findBest(List<ApplyResult> results, BenefitType type) {
     return results.stream()
         .filter(r -> type.toString().equals(r.getBenefitType()))
         .max(Comparator.comparing(ApplyResult::getBenefitValue))
-        .orElseGet(() -> ApplyResult.fail(String.format("No %s benefit is applied", type.toString())));
+        .orElseGet(null);
   }
 
   @Transactional

@@ -44,6 +44,8 @@ public class Membership extends BaseEntity {
 
   String membershipName;
 
+  String membershipCode;
+
   Integer minPoint;
 
   Integer validityMonths;

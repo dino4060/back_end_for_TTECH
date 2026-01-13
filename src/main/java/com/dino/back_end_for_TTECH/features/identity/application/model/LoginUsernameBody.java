@@ -7,10 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record LoginUsernameBody (
-        @NotBlank(message = "AUTH__USERNAME_VALIDATION")
+        @NotBlank(message = "Username is required")
         String username,
 
-        @Size(message = "AUTH__PASSWORD_VALIDATION", min = 8)
+        @Size(message = "Password gồm 8 ký tự", min = 8)
         String password
 
 ) implements ILoginBodyStrategy {

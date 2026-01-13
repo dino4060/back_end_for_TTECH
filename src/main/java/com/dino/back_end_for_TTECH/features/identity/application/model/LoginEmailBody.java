@@ -7,10 +7,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 public record LoginEmailBody(
-        @Email(message = "AUTH__EMAIL_VALIDATION")
+        @Email(message = "Email chưa đúng định dạng")
         String email,
 
-        @Size(message = "AUTH__PASSWORD_VALIDATION", min = 8)
+        @Size(message = "Password ít nhất 8 kí tự", min = 8)
         String password
 ) implements ILoginBodyStrategy {
 

@@ -1,20 +1,26 @@
 package com.dino.back_end_for_TTECH.features.membership.application;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import com.dino.back_end_for_TTECH.features.membership.application.mapper.MembershipMapper;
+import com.dino.back_end_for_TTECH.features.membership.application.model.BenefitBody;
+import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipBody;
+import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipData;
+import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
 import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembshipRepository;
 import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
-import com.dino.back_end_for_TTECH.features.promotion.domain.model.CouponApplyResult;
-import com.dino.back_end_for_TTECH.shared.api.annotation.AuthUser;
-import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
+import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,20 +33,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MembshipService {
 
-  MembshipRepository membershipRepo;
+  MembshipRepository membshipRepo;
+  MembershipMapper membshipMapper;
   UserRepository userRepo;
 
   @Transactional
   public Membership offerTo(User customer) {
     Sort descPriority = Sort.by(Sort.Direction.DESC, "minPoint");
-    List<Membership> memberships = membershipRepo.findAll(descPriority);
+    List<Membership> memberships = membshipRepo.findAll(descPriority);
 
     if (memberships.isEmpty()) {
       return null;
     }
 
     LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
-    Integer points = userRepo.sumPaymentByCustomerSince(customer, sixMonthsAgo);
+    Instant since = sixMonthsAgo.toInstant(ZoneOffset.UTC);
+    Integer points = userRepo.sumPaymentByCustomerSince(customer, since);
 
     if (points == null || points <= 0) {
       return memberships.getLast();
@@ -54,20 +62,111 @@ public class MembshipService {
     return offerMembership;
   }
 
-  @Transactional
-  public void getByCustomer(
-      @AuthUser CurrentUser customer,
-      @RequestBody CouponApplyResult appliedCoupon) {
+  @Transactional(readOnly = true)
+  public MembershipData getByCustomer(long customerId) {
+    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    return;
+    var membership = offerTo(customer);
+    if (membership == null) {
+      membership = new Membership();
+    }
+
+    return membshipMapper.toData(membership);
+  }
+
+  @Transactional(readOnly = true)
+  public List<MembershipData> list() {
+    return membshipRepo.findAll().stream()
+        .map(membshipMapper::toData)
+        .collect(Collectors.toList());
+  }
+
+  @Transactional(readOnly = true)
+  public MembershipData get(long id) {
+    var membership = membshipRepo.findWithBenefitsById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
+
+    return membshipMapper.toData(membership);
   }
 
   @Transactional
-  public void listCustomer(
-      @AuthUser CurrentUser customer,
-      @RequestBody CouponApplyResult appliedCoupon) {
+  public void delete(long id) {
+    var membership = membshipRepo.findById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
+    membshipRepo.delete(membership);
+  }
 
-    return;
+  @Transactional
+  public MembershipData update(MembershipBody body) {
+    var id = body.getId();
+    var membership = membshipRepo.findWithBenefitsById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
+
+    membshipMapper.toModel(body, membership);
+
+    if (body.getBenefits() != null) {
+      processBenefits(membership, body.getBenefits());
+    }
+
+    var saved = membshipRepo.save(membership);
+    return membshipMapper.toData(saved);
+  }
+
+  @Transactional
+  public MembershipData create(MembershipBody body) {
+    var membership = membshipMapper.toModel(body);
+
+    if (body.getBenefits() != null && !body.getBenefits().isEmpty()) {
+      List<Benefit> benefits = body.getBenefits().stream()
+          .map(benefitBody -> createBenefit(membership, benefitBody))
+          .collect(Collectors.toList());
+
+      membership.getBenefits().addAll(benefits);
+    }
+
+    var saved = membshipRepo.save(membership);
+    return membshipMapper.toData(saved);
+  }
+
+  private void processBenefits(Membership membership, List<BenefitBody> benefitBodies) {
+    Map<Long, Benefit> existing = membership.getBenefits().stream()
+        .filter(b -> b.getId() != null)
+        .collect(Collectors.toMap(Benefit::getId, b -> b));
+
+    List<Benefit> updated = benefitBodies.stream()
+        .map(body -> {
+          if (body.getId() != null && existing.containsKey(body.getId())) {
+            Benefit benefit = existing.remove(body.getId());
+            updateBenefit(benefit, body);
+            return benefit;
+          } else {
+            return createBenefit(membership, body);
+          }
+        })
+        .collect(Collectors.toList());
+
+    membership.getBenefits().clear();
+    membership.getBenefits().addAll(updated);
+  }
+
+  private Benefit createBenefit(Membership membership, BenefitBody body) {
+    var benefit = new Benefit();
+    benefit.setMembership(membership);
+    benefit.setBenefitType(body.getBenefitType());
+    benefit.setBenefitName(body.getBenefitName());
+    benefit.setBenefitValue(body.getBenefitValue());
+    benefit.setBenefitUnit(body.getBenefitUnit());
+    benefit.setMinSpend(body.getMinSpend());
+    benefit.setValidityMonths(body.getValidityMonths());
+    benefit.setLimitPerCustomer(body.getLimitPerCustomer());
+    return benefit;
+  }
+
+  private void updateBenefit(Benefit benefit, BenefitBody body) {
+    benefit.setBenefitType(body.getBenefitType());
+    benefit.setBenefitName(body.getBenefitName());
+    benefit.setBenefitValue(body.getBenefitValue());
+    benefit.setBenefitUnit(body.getBenefitUnit());
+    benefit.setMinSpend(body.getMinSpend());
+    benefit.setValidityMonths(body.getValidityMonths());
+    benefit.setLimitPerCustomer(body.getLimitPerCustomer());
   }
 
 }

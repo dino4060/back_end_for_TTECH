@@ -73,7 +73,7 @@ public class Benefit extends BaseEntity {
     if (customerId != null && this.limitPerCustomer != null) {
       Integer usage = this.countPerCustomer.getOrDefault(customerId, 0);
       if (usage >= this.limitPerCustomer) {
-        return ApplyResult.fail("Bạn đã hết lượt sử dụng đặc quyền");
+        return ApplyResult.fail("Bạn đã hết lượt sử dụng");
       }
     }
 
