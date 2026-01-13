@@ -11,20 +11,17 @@ public class ApplyResult {
 
   Boolean isApplied;
   Long id;
+  String membershipCode;
   String benefitType;
   String benefitName;
   Integer benefitValue;
   String message;
 
   public static ApplyResult success(Long id, String benefitType, String benefitName, Integer benefitValue) {
-    return new ApplyResult(true, id, benefitType, benefitName, benefitValue, "Benefit applied successfully");
-  }
-
-  public static ApplyResult success(Long id, String benefitType, Integer benefitValue) {
-    return new ApplyResult(true, id, benefitType, null, benefitValue, "Benefit applied successfully");
+    return new ApplyResult(true, id, null, benefitType, benefitName, benefitValue, "Benefit applied successfully");
   }
 
   public static ApplyResult fail(String message) {
-    return new ApplyResult(false, null, null, null, 0, message);
+    return new ApplyResult(false, null, null, null, null, 0, message);
   }
 }

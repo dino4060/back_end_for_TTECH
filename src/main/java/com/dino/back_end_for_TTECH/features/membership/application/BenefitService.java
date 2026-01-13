@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dino.back_end_for_TTECH.features.membership.application.model.ApplyBody;
 import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
 import com.dino.back_end_for_TTECH.features.membership.domain.Member;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.ApplyResult;
@@ -46,8 +47,8 @@ public class BenefitService {
   }
 
   public List<ApplyResult> preview(
-      long customerId,
-      int spendAmount) {
+      Long customerId,
+      ApplyBody applyBody) {
 
     Member member = memberService.findOrCreate(customerId);
     if (member == null) {
@@ -60,11 +61,12 @@ public class BenefitService {
     }
 
     var appliedResults = benefits.stream()
-        .map(b -> b.canApply(customerId, spendAmount))
+        .map(b -> b.canApply(customerId, applyBody.getSpendAmount()))
         .filter(r -> r.getIsApplied())
+        .peek(r -> r.setMembershipCode(member.getMembership().getMembershipCode()))
         .collect(Collectors.toList());
 
-    var bestUpgrade = findBest(appliedResults, BenefitType.UPGRAGE);
+    var bestUpgrade = findBest(appliedResults, BenefitType.UPGRADE);
     var bestRenew = findBest(appliedResults, BenefitType.RENEW);
     var bestCoupon = findBest(appliedResults, BenefitType.COUPON);
     var bestGuarantee = findBest(appliedResults, BenefitType.GUARANTEE);
@@ -74,7 +76,12 @@ public class BenefitService {
 
   private ApplyResult findBest(List<ApplyResult> results, BenefitType type) {
     return results.stream()
-        .filter(r -> type.toString().equals(r.getBenefitType()))
+        .peek((r) -> {
+          System.out.println(type.name());
+          System.out.println(r.getBenefitType());
+          System.out.println(type.name().equals(r.getBenefitType()));
+        })
+        .filter(r -> type.name().equals(r.getBenefitType()))
         .max(Comparator.comparing(ApplyResult::getBenefitValue))
         .orElseGet(() -> ApplyResult.fail(String.format("No %s benefit is applied", type.name())));
   }

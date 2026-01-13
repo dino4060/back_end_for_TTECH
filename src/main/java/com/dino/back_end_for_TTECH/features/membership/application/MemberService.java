@@ -50,12 +50,12 @@ public class MemberService {
     }
     if (member.hasStatus(MemberStatus.RENEW)) {
       return benefits.stream()
-          .filter(b -> !BenefitType.UPGRAGE.name().equals(b.getBenefitType()))
+          .filter(b -> !BenefitType.UPGRADE.name().equals(b.getBenefitType()))
           .toList();
     }
     if (member.hasStatus(MemberStatus.DOWNGRADE)) {
       return benefits.stream()
-          .filter(b -> !BenefitType.UPGRAGE.name().equals(b.getBenefitType()))
+          .filter(b -> !BenefitType.UPGRADE.name().equals(b.getBenefitType()))
           .filter(b -> !BenefitType.RENEW.name().equals(b.getBenefitType()))
           .toList();
     }
@@ -102,22 +102,23 @@ public class MemberService {
 
     User customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    Member member = memberRepo.findByCustomer(customer).orElseGet(null);
-    if (member != null) {
-      return member;
+    Member member = memberRepo.findByCustomer(customer).orElse(null);
+    if (member == null) {
+      var memberships = membshipRepo.findAll();
+      if (memberships.isEmpty()) {
+        return null;
+      }
+
+      var newMember = new Member();
+      newMember.setCustomer(customer);
+      newMember.setPoints(0);
+      newMember.setMembership(memberships.getLast());
+      newMember.setRankedAt(LocalDateTime.now());
+      newMember.setStatus(MemberStatus.UPGRADE);
+      var saved = this.memberRepo.save(newMember);
+      return saved;
     }
 
-    var memberships = membshipRepo.findAll();
-    if (memberships.isEmpty()) {
-      return null;
-    }
-
-    member = new Member();
-    member.setCustomer(customer);
-    member.setPoints(0);
-    member.setMembership(memberships.getLast());
-    member.setRankedAt(LocalDateTime.now());
-    member.setStatus(MemberStatus.UPGRADE);
     return member;
   }
 }
