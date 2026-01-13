@@ -68,7 +68,7 @@ public class Member extends BaseEntity implements BaseStatus<MemberStatus> {
 
     membshipList.sort((a, b) -> b.getMinPoint().compareTo(a.getMinPoint()));
     Membership newMembship = membshipList.stream()
-        .filter(m -> this.getPoints() >= m.getMinPoint())
+        .filter(m -> newPoints >= m.getMinPoint())
         .findFirst()
         .orElse(membshipList.getLast());
 

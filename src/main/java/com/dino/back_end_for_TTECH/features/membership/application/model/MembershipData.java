@@ -18,4 +18,5 @@ public class MembershipData {
   List<BenefitData> benefits;
   Instant createdAt;
   Instant updatedAt;
+  Integer points;
 }

@@ -30,43 +30,44 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Order extends BaseEntity implements BaseStatus<OrderStatus> {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "orders_seq")
-    @SequenceGenerator(name = "orders_seq", allocationSize = 1)
-    @Column(name = "order_id")
-    Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "orders_seq")
+  @SequenceGenerator(name = "orders_seq", allocationSize = 1)
+  @Column(name = "order_id")
+  Long id;
 
-    int allPrice;
-    int allDiscount;
-    int shippingFee;
-    int total;
+  int allPrice;
+  int allDiscount;
+  int shippingFee;
+  int total;
 
-    String note;
-    String paymentType;
+  String note;
+  String paymentType;
+  List<String> giftTexts;
 
-    String toUserName;
-    String toPhone;
-    Integer toProvinceId;
-    Integer toWardId;
-    String toStreet;
+  String toUserName;
+  String toPhone;
+  Integer toProvinceId;
+  Integer toWardId;
+  String toStreet;
 
-    String fromUserName;
-    String fromPhone;
-    Integer fromProvinceId;
-    Integer fromWardId;
-    String fromStreet;
+  String fromUserName;
+  String fromPhone;
+  Integer fromProvinceId;
+  Integer fromWardId;
+  String fromStreet;
 
-    String status;
-    Instant orderTime;
-    String parcelCode;
+  String status;
+  Instant orderTime;
+  String parcelCode;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false, updatable = false)
-    User buyer;
+  @JsonIgnore
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "buyer_id", nullable = false, updatable = false)
+  User buyer;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "order", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    List<OrderLine> lines = new ArrayList<>();
+  @JsonIgnore
+  @OneToMany(mappedBy = "order", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  List<OrderLine> lines = new ArrayList<>();
 
 }

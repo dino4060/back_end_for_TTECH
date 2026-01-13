@@ -1,5 +1,7 @@
 package com.dino.back_end_for_TTECH.features.ordering.application;
 
+import com.dino.back_end_for_TTECH.features.membership.application.BenefitService;
+import com.dino.back_end_for_TTECH.features.membership.application.MemberService;
 import com.dino.back_end_for_TTECH.features.ordering.application.mapper.OrderMapper;
 import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderBody;
 import com.dino.back_end_for_TTECH.features.ordering.application.model.OrderData;
@@ -40,6 +42,10 @@ public class OrderService {
 
   CouponService couponService;
 
+  BenefitService benefitService;
+
+  MemberService memberService;
+
   private void genStatus(Order order) {
     if (order.getPaymentType().equals(PaymentType.COD.name()))
       order.setStatus(OrderStatus.PENDING);
@@ -74,7 +80,15 @@ public class OrderService {
   }
 
   public OrderData checkout(OrderBody body, CurrentUser user) {
-    couponService.apply(user, body.getCouponCode());
+    for (var result : body.getCouponResults()) {
+      couponService.apply(user, result);
+    }
+
+    for (var result : body.getBenefitResults()) {
+      benefitService.apply(user, result);
+    }
+
+    memberService.plusPoints(user.id(), body.getTotal());
 
     var newOrder = this.orderMapper.toModel(body);
     newOrder.setBuyer(user.toUser());
@@ -116,6 +130,9 @@ public class OrderService {
 
     if (body.getStatus() != null) {
       editOrder.setStatus(body.getStatus());
+      if (editOrder.hasStatus(OrderStatus.CANCELED)) {
+        memberService.minusPoints(buyer.id(), editOrder.getTotal());
+      }
     }
     if (body.getParcelCode() != null) {
       editOrder.setParcelCode(body.getParcelCode());

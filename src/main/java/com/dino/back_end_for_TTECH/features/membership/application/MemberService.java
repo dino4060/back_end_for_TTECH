@@ -92,7 +92,43 @@ public class MemberService {
       return membshipMapper.toData(null);
     }
 
-    return membshipMapper.toData(membership);
+    var data = membshipMapper.toData(membership);
+    data.setPoints(member.getPoints());
+    return data;
+  }
+
+  public void plusPoints(Long customerId, int total) {
+    var member = this.findOrCreate(customerId);
+
+    LocalDateTime fromLocal = LocalDateTime.now().minusMonths(member.getMembership().getValidityMonths());
+    Instant from = fromLocal.toInstant(ZoneOffset.UTC);
+    int points = memberRepo.calcPointsByCustomerFrom(member.getCustomer(), from) + total;
+
+    var memberships = membshipRepo.findAll();
+    if (memberships.isEmpty()) {
+      return;
+    }
+
+    member.rank(points, memberships);
+    memberRepo.save(member);
+    return;
+  }
+
+  public void minusPoints(Long customerId, int total) {
+    var member = this.findOrCreate(customerId);
+
+    LocalDateTime fromLocal = LocalDateTime.now().minusMonths(member.getMembership().getValidityMonths());
+    Instant from = fromLocal.toInstant(ZoneOffset.UTC);
+    int points = memberRepo.calcPointsByCustomerFrom(member.getCustomer(), from) - total;
+
+    var memberships = membshipRepo.findAll();
+    if (memberships.isEmpty()) {
+      return;
+    }
+
+    member.rank(points, memberships);
+    memberRepo.save(member);
+    return;
   }
 
   public Member findOrCreate(Long customerId) {
