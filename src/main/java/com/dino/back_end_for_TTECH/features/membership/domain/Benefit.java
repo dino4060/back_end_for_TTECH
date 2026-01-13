@@ -68,6 +68,14 @@ public class Benefit extends BaseEntity {
   @Column(columnDefinition = "jsonb")
   Map<Long, Integer> countPerCustomer = new HashMap<>();
 
+  public void markAsUsed(Long customerId) {
+    // Increment customer usage
+    if (customerId != null) {
+      Integer currentUsage = this.getCountPerCustomer().getOrDefault(customerId, 0);
+      this.countPerCustomer.put(customerId, currentUsage + 1);
+    }
+  }
+
   public ApplyResult canApply(Long customerId, Integer spendAmount) {
     // 1. Kiểm tra số lần sử dụng cho mỗi khách hàng
     if (customerId != null && this.limitPerCustomer != null) {

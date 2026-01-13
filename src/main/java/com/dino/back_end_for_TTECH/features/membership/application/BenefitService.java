@@ -7,13 +7,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
+import com.dino.back_end_for_TTECH.features.membership.domain.Member;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.ApplyResult;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.BenefitType;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.BenefitRepository;
-import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
-import com.dino.back_end_for_TTECH.features.promotion.application.model.CouponBodyApply;
 import com.dino.back_end_for_TTECH.shared.api.model.CurrentUser;
-import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
+import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,29 +28,39 @@ public class BenefitService {
 
   BenefitRepository benefitRepo;
 
-  MembshipService membshipService;
+  MemberService memberService;
 
-  UserRepository userRepo;
+  @Transactional
+  public void apply(
+      CurrentUser customer,
+      ApplyResult benefitResult) {
 
-  @Transactional(readOnly = true)
+    if (!benefitResult.getIsApplied()) {
+      return;
+    }
+
+    Benefit benefit = benefitRepo.findById(benefitResult.getId())
+        .orElseThrow(() -> new BadRequestE("Benefit not found"));
+
+    benefit.markAsUsed(customer.id());
+  }
+
   public List<ApplyResult> preview(
       long customerId,
-      CouponBodyApply body) {
+      int spendAmount) {
 
-    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
-
-    var membership = this.membshipService.offerTo(customer);
-    if (membership == null) {
+    Member member = memberService.findOrCreate(customerId);
+    if (member == null) {
       return List.of();
     }
 
-    var benefits = this.benefitRepo.findByMembership(membership);
-    if (benefits.size() == 0) {
+    var benefits = this.memberService.offerBenefits(member);
+    if (benefits.isEmpty()) {
       return List.of();
     }
 
     var appliedResults = benefits.stream()
-        .map(b -> b.canApply(customerId, body.getSpendAmount()))
+        .map(b -> b.canApply(customerId, spendAmount))
         .filter(r -> r.getIsApplied())
         .collect(Collectors.toList());
 
@@ -66,14 +76,6 @@ public class BenefitService {
     return results.stream()
         .filter(r -> type.toString().equals(r.getBenefitType()))
         .max(Comparator.comparing(ApplyResult::getBenefitValue))
-        .orElseGet(null);
-  }
-
-  @Transactional
-  public void apply(
-      CurrentUser customer,
-      int spendAmount) {
-
-    return;
+        .orElseGet(() -> ApplyResult.fail(String.format("No %s benefit is applied", type.name())));
   }
 }

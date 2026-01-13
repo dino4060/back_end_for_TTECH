@@ -1,13 +1,9 @@
 package com.dino.back_end_for_TTECH.features.membership.application;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +14,6 @@ import com.dino.back_end_for_TTECH.features.membership.application.model.Members
 import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
 import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembshipRepository;
-import com.dino.back_end_for_TTECH.features.profile.domain.User;
-import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
 import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 
 import lombok.AccessLevel;
@@ -31,48 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 @Slf4j
-public class MembshipService {
+public class MembershipService {
 
   MembshipRepository membshipRepo;
   MembershipMapper membshipMapper;
-  UserRepository userRepo;
-
-  @Transactional
-  public Membership offerTo(User customer) {
-    Sort descPriority = Sort.by(Sort.Direction.DESC, "minPoint");
-    List<Membership> memberships = membshipRepo.findAll(descPriority);
-
-    if (memberships.isEmpty()) {
-      return null;
-    }
-
-    LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
-    Instant since = sixMonthsAgo.toInstant(ZoneOffset.UTC);
-    Integer points = userRepo.sumPaymentByCustomerSince(customer, since);
-
-    if (points == null || points <= 0) {
-      return memberships.getLast();
-    }
-
-    Membership offerMembership = memberships.stream()
-        .filter(m -> points >= m.getMinPoint())
-        .findFirst()
-        .orElse(memberships.getLast());
-
-    return offerMembership;
-  }
-
-  @Transactional(readOnly = true)
-  public MembershipData getByCustomer(long customerId) {
-    var customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
-
-    var membership = offerTo(customer);
-    if (membership == null) {
-      membership = new Membership();
-    }
-
-    return membshipMapper.toData(membership);
-  }
 
   @Transactional(readOnly = true)
   public List<MembershipData> list() {

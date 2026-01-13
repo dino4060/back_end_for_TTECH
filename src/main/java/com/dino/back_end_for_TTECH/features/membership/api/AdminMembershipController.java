@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.dino.back_end_for_TTECH.features.membership.application.MembshipService;
+import com.dino.back_end_for_TTECH.features.membership.application.MembershipService;
 import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipBody;
 import com.dino.back_end_for_TTECH.shared.api.constant.HasRole;
 
@@ -27,7 +27,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminMembershipController {
 
-  MembshipService membshipService;
+  MembershipService membshipService;
 
   @GetMapping
   public ResponseEntity<?> list() {
