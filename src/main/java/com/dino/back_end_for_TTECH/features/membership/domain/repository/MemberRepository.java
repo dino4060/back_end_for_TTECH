@@ -1,12 +1,11 @@
 package com.dino.back_end_for_TTECH.features.membership.domain.repository;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.dino.back_end_for_TTECH.features.membership.domain.Member;
@@ -16,22 +15,24 @@ import com.dino.back_end_for_TTECH.shared.domain.BaseRepository;
 @Repository
 public interface MemberRepository extends BaseRepository<Member, Long> {
 
+  List<Member> findByCustomerIn(List<User> customers);
+
   @EntityGraph(attributePaths = { "membership" })
   Optional<Member> findByCustomer(User customer);
 
   @Query("SELECT COALESCE(SUM(o.total), 0) FROM Order o " +
       "WHERE o.buyer = :customer " +
-      // "AND o.status = 'COMPLETED' "
       "AND o.createdAt >= :since")
   int calcPointsByCustomerFrom(User customer, Instant since);
 
-  @Query("""
-      SELECT COALESCE(SUM(o.total), 0)
-      FROM Order o
-      WHERE o.buyer.id = :customerId
-      AND o.createdAt >= :fromDate
-      """)
-  Long sumPaymentByCustomerFromLegacy(
-      @Param("customerId") Long customerId,
-      @Param("fromDate") LocalDateTime fromDate);
+  // @Query("""
+  // SELECT COALESCE(SUM(o.total), 0)
+  // FROM Order o
+  // WHERE o.buyer.id = :customerId
+  // AND o.createdAt >= :fromDate
+  // AND o.status = 'COMPLETED'
+  // """)
+  // Long calcPointsByCustomerFromLegacy(
+  // @Param("customerId") Long customerId,
+  // @Param("fromDate") LocalDateTime fromDate);
 }

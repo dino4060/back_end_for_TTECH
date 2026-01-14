@@ -1,5 +1,6 @@
 package com.dino.back_end_for_TTECH.features.membership.application;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,7 +14,7 @@ import com.dino.back_end_for_TTECH.features.membership.application.model.Members
 import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipData;
 import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
 import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
-import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembshipRepository;
+import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembershipRepository;
 import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 
 import lombok.AccessLevel;
@@ -27,8 +28,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MembershipService {
 
-  MembshipRepository membshipRepo;
+  MembershipRepository membshipRepo;
   MembershipMapper membshipMapper;
+
+  @Transactional(readOnly = true)
+  public Membership findStarterRank() {
+    var memberships = membshipRepo.findAll();
+
+    if (memberships.isEmpty())
+      return null;
+
+    return Collections.min(memberships, (a, b) -> a.getMinPoint().compareTo(b.getMinPoint()));
+  }
 
   @Transactional(readOnly = true)
   public List<MembershipData> list() {

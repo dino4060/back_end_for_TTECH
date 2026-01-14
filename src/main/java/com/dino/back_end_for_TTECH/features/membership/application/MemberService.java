@@ -3,7 +3,10 @@ package com.dino.back_end_for_TTECH.features.membership.application;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -15,7 +18,7 @@ import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.BenefitType;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.MemberStatus;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.MemberRepository;
-import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembshipRepository;
+import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembershipRepository;
 import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.features.profile.domain.repository.UserRepository;
 import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
@@ -33,7 +36,8 @@ public class MemberService {
 
   MemberRepository memberRepo;
 
-  MembshipRepository membshipRepo;
+  MembershipService membshipService;
+  MembershipRepository membshipRepo;
   MembershipMapper membshipMapper;
 
   UserRepository userRepo;
@@ -132,29 +136,47 @@ public class MemberService {
   }
 
   public Member findOrCreate(Long customerId) {
-    if (customerId == null) {
+    if (customerId == null)
       throw new NotFoundE("Customer not found");
-    }
 
-    User customer = userRepo.findById(customerId).orElseThrow(() -> new NotFoundE("Customer not found"));
+    var customer = userRepo.findById(customerId)
+        .orElseThrow(() -> new NotFoundE("Customer not found"));
 
-    Member member = memberRepo.findByCustomer(customer).orElse(null);
-    if (member == null) {
-      var memberships = membshipRepo.findAll();
-      if (memberships.isEmpty()) {
-        return null;
-      }
+    var member = memberRepo.findByCustomer(customer)
+        .orElseGet(() -> {
+          var membership = membshipService.findStarterRank();
+          if (membership == null)
+            return null;
 
-      var newMember = new Member();
-      newMember.setCustomer(customer);
-      newMember.setPoints(0);
-      newMember.setMembership(memberships.getLast());
-      newMember.setRankedAt(LocalDateTime.now());
-      newMember.setStatus(MemberStatus.UPGRADE);
-      var saved = this.memberRepo.save(newMember);
-      return saved;
-    }
+          var newMember = membership.enrollMember(customer);
+          return this.memberRepo.save(newMember);
+        });
 
     return member;
+  }
+
+  public Map<Long, Member> findOrCreate(List<User> customers) {
+    if (customers == null || customers.isEmpty())
+      return Collections.emptyMap();
+
+    List<Member> existingMembers = memberRepo.findByCustomerIn(customers);
+    Map<Long, Member> memberMap = existingMembers.stream()
+        .collect(Collectors.toMap(m -> m.getCustomer().getId(), m -> m));
+
+    var staterMembership = membshipService.findStarterRank();
+    if (staterMembership == null)
+      return Collections.emptyMap();
+
+    List<Member> toCreateMembers = customers.stream()
+        .filter(c -> !memberMap.containsKey(c.getId()))
+        .map(c -> staterMembership.enrollMember(c))
+        .toList();
+
+    if (!toCreateMembers.isEmpty()) {
+      memberRepo.saveAll(toCreateMembers);
+      toCreateMembers.forEach(m -> memberMap.put(m.getCustomer().getId(), m));
+    }
+
+    return memberMap;
   }
 }

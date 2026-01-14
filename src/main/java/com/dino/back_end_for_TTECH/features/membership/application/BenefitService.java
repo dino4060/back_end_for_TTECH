@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dino.back_end_for_TTECH.features.membership.application.model.ApplyBody;
-import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
-import com.dino.back_end_for_TTECH.features.membership.domain.Member;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.ApplyResult;
 import com.dino.back_end_for_TTECH.features.membership.domain.model.BenefitType;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.BenefitRepository;
@@ -40,8 +38,7 @@ public class BenefitService {
       return;
     }
 
-    Benefit benefit = benefitRepo.findById(benefitResult.getId())
-        .orElseThrow(() -> new BadRequestE("Benefit not found"));
+    var benefit = benefitRepo.findById(benefitResult.getId()).orElseThrow(() -> new BadRequestE("Benefit not found"));
 
     benefit.markAsUsed(customer.id());
   }
@@ -50,7 +47,7 @@ public class BenefitService {
       Long customerId,
       ApplyBody applyBody) {
 
-    Member member = memberService.findOrCreate(customerId);
+    var member = memberService.findOrCreate(customerId);
     if (member == null) {
       return List.of();
     }

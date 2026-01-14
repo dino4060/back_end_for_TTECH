@@ -1,11 +1,14 @@
 package com.dino.back_end_for_TTECH.features.membership.domain;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
+import com.dino.back_end_for_TTECH.features.membership.domain.model.MemberStatus;
+import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.shared.domain.model.BaseEntity;
 
 import jakarta.persistence.CascadeType;
@@ -52,4 +55,14 @@ public class Membership extends BaseEntity {
 
   @OneToMany(mappedBy = "membership", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   List<Benefit> benefits = new ArrayList<>();
+
+  public Member enrollMember(User customer) {
+    var member = new Member();
+    member.setMembership(this);
+    member.setCustomer(customer);
+    member.setPoints(0);
+    member.setRankedAt(LocalDateTime.now());
+    member.setStatus(MemberStatus.UPGRADE);
+    return member;
+  }
 }
