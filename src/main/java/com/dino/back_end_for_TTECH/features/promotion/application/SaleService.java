@@ -10,6 +10,7 @@ import com.dino.back_end_for_TTECH.features.promotion.domain.Sale;
 import com.dino.back_end_for_TTECH.features.promotion.domain.model.Status;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.CampaignRepository;
 import com.dino.back_end_for_TTECH.features.promotion.domain.repository.SaleRepository;
+import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
 import com.dino.back_end_for_TTECH.shared.application.exception.ModelNotFoundE;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -100,7 +101,11 @@ public class SaleService {
         .filter(u -> u.isOn())
         .map(u -> u.getProduct()).toList();
 
-    this.campaignRepo.delete(sale);
+    try {
+      this.campaignRepo.delete(sale);
+    } catch (Exception e) {
+      throw new BadRequestE("Discount đã sử dụng, không thể xóa.");
+    }
 
     if (isOngoingSale) {
       discountProducts.forEach(p -> {

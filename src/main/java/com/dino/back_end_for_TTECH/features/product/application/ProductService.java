@@ -218,9 +218,13 @@ public class ProductService {
   public void delete(long id) {
     Product product = this.get(id);
     if (!this.hasParents(product))
-      throw new BadRequestE("The product is on sale");
+      throw new BadRequestE("Sản phẩm đã sử dụng, không thể xóa");
 
-    this.productRepository.delete(product);
+    try {
+      this.productRepository.delete(product);
+    } catch (Exception e) {
+      throw new BadRequestE("Sản phẩm đã sử dụng, không thể xóa.");
+    }
   }
 
   @Transactional

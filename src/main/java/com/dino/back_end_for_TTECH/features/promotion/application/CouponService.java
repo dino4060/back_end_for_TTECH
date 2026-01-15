@@ -221,10 +221,14 @@ public class CouponService {
   @Transactional
   public void delete(Coupon coupon) {
     if (customerCouponRepo.existsByCoupon(coupon)) {
-      throw new BadRequestE("Cannot delete the used coupon with ID: " + coupon.getId());
+      throw new BadRequestE("Coupon đã sử dụng, không thể xóa");
     }
 
-    this.couponRepo.delete(coupon);
+    try {
+      this.couponRepo.delete(coupon);
+    } catch (Exception e) {
+      throw new BadRequestE("Coupon đã sử dụng, không thể xóa.");
+    }
   }
 
   @Transactional
