@@ -3,6 +3,8 @@ package com.dino.back_end_for_TTECH.features.product.application.mapper;
 import com.dino.back_end_for_TTECH.features.product.application.model.*;
 import com.dino.back_end_for_TTECH.features.product.domain.Product;
 import com.dino.back_end_for_TTECH.features.product.domain.specification.ProductSpec;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CampaignData;
+import com.dino.back_end_for_TTECH.features.promotion.domain.Sale;
 import com.dino.back_end_for_TTECH.shared.application.mapper.PageMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -16,6 +18,8 @@ import java.util.Map;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper extends PageMapper {
+
+  CampaignData toCampaignData(Sale discount);
 
   Map<String, Sort.Order> SortMap = Map.of(
       "trendy", new Sort.Order(Sort.Direction.DESC, "stock.views"),

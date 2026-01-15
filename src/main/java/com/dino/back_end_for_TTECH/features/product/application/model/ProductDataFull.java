@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dino.back_end_for_TTECH.features.product.domain.model.ProductSpecification;
+import com.dino.back_end_for_TTECH.features.promotion.application.model.CampaignData;
 
 import lombok.AccessLevel;
 import lombok.Data;
@@ -29,4 +30,6 @@ public class ProductDataFull {
   SeriesData series;
 
   List<ProductSpecification> specifications = new ArrayList<>();
+
+  CampaignData discountCampaign;
 }

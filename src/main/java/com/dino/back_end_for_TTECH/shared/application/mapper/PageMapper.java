@@ -13,25 +13,34 @@ import java.util.function.Function;
 
 public interface PageMapper {
 
-    default Pageable toPageable(PageQuery query) {
-        var pageNumber = query.getPage() - 1;
-        var sizeNumber = query.getSize();
-        var sort = Sort.by(
-                query.getDirection().equals("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC,
-                query.getSort()
-        );
-        return PageRequest.of(pageNumber, sizeNumber, sort);
-    }
+  default Pageable toPageable(PageQuery query) {
+    var pageNumber = query.getPage() - 1;
+    var sizeNumber = query.getSize();
+    var sort = Sort.by(
+        query.getDirection().equals("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC,
+        query.getSort());
+    return PageRequest.of(pageNumber, sizeNumber, sort);
+  }
 
-    default <M, D> PageData<D> toPageData(Page<M> page, Function<M, D> toDataFunc) {
-        var totalPages = page.getTotalPages();
-        var totalItems = (int) page.getTotalElements();
-        var no = page.getNumber() + 1;
-        var size = page.getSize();
-        List<D> items = toDataFunc == null
-                ? new ArrayList<>()
-                : page.getContent().stream().map(model -> toDataFunc.apply(model)).toList();
+  default <M, D> PageData<D> toPageData(Page<M> page, Function<M, D> toDataFunc) {
+    var totalPages = page.getTotalPages();
+    var totalItems = (int) page.getTotalElements();
+    var no = page.getNumber() + 1;
+    var size = page.getSize();
+    List<D> items = toDataFunc == null
+        ? new ArrayList<>()
+        : page.getContent().stream().map(model -> toDataFunc.apply(model)).toList();
 
-        return new PageData<>(totalPages, totalItems, no, size, items);
-    }
+    return new PageData<>(totalPages, totalItems, no, size, items);
+  }
+
+  default <M, D> PageData<D> toPageData(Page<M> page, List<D> dataList) {
+    var totalPages = page.getTotalPages();
+    var totalItems = (int) page.getTotalElements();
+    var no = page.getNumber() + 1;
+    var size = page.getSize();
+    List<D> items = dataList;
+
+    return new PageData<>(totalPages, totalItems, no, size, items);
+  }
 }

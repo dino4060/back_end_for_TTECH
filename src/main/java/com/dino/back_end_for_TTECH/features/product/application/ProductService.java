@@ -1,7 +1,20 @@
 package com.dino.back_end_for_TTECH.features.product.application;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.PageImpl;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.dino.back_end_for_TTECH.features.product.application.mapper.ProductMapper;
-import com.dino.back_end_for_TTECH.features.product.application.model.*;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductBody;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductData;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductDataFull;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductQuery;
+import com.dino.back_end_for_TTECH.features.product.application.model.ProductQueryHome;
 import com.dino.back_end_for_TTECH.features.product.domain.Product;
 import com.dino.back_end_for_TTECH.features.product.domain.Stock;
 import com.dino.back_end_for_TTECH.features.product.domain.model.Status;
@@ -11,13 +24,11 @@ import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
 import com.dino.back_end_for_TTECH.shared.application.exception.ModelNotFoundE;
 import com.dino.back_end_for_TTECH.shared.application.model.PageData;
 import com.dino.back_end_for_TTECH.shared.application.utils.AppCheck;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 // NOTE: == vs equal()
 // 1. == compares on stack
@@ -28,20 +39,21 @@ import java.util.Comparator;
 
 @Service
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class ProductService {
 
-  private final PriceService priceService;
+  PriceService priceService;
 
-  private final StockService stockService;
+  StockService stockService;
 
-  private final CategoryService categoryService;
+  CategoryService categoryService;
 
-  private final SeriesService supplierService;
+  SeriesService supplierService;
 
-  private final ProductRepository productRepository;
+  ProductRepository productRepository;
 
-  private final ProductMapper mapper;
+  ProductMapper mapper;
 
   // DOMAIN //
 
@@ -138,8 +150,42 @@ public class ProductService {
       page = sortedPage;
     }
 
-    return this.mapper.toPageData(
-        page, (Product p) -> this.mapper.toProductFullData(p));
+    // return this.mapper.toPageData(
+    // page, (Product p) -> this.mapper.toProductFullData(p));
+
+    // 2. Map sang DTO List để chuẩn bị enrich dữ liệu
+    var productDtos = page.getContent().stream()
+        .map(p -> this.mapper.toProductFullData(p))
+        .toList();
+
+    // 3. Enrich Campaign Data (Batch Processing)
+    this.enrichCampaigns(productDtos, page.getContent());
+
+    return this.mapper.toPageData(page, productDtos);
+  }
+
+  private void enrichCampaigns(List<ProductDataFull> dtos, List<Product> entities) {
+    // Chuyển entities thành map để dễ truy xuất SaleUnits
+    Map<Long, Product> entityMap = entities.stream()
+        .collect(Collectors.toMap(Product::getId, p -> p));
+
+    for (ProductDataFull dto : dtos) {
+      Product entity = entityMap.get(dto.getId());
+      if (entity == null || entity.getSaleUnits() == null)
+        continue;
+
+      // Tìm SaleUnit khớp với logic mainPrice hoặc dealPercent
+      entity.getSaleUnits().stream()
+          .filter(unit -> unit.getDealPrice() == dto.getPrice().mainPrice() ||
+              unit.getDealPercent() == dto.getPrice().dealPercent())
+          .findFirst()
+          .ifPresent(unit -> {
+            // Nếu tìm thấy, gán Campaign vào DTO
+            if (unit.getSale() != null && unit.getSale() != null) {
+              dto.setDiscountCampaign(this.mapper.toCampaignData(unit.getSale()));
+            }
+          });
+    }
   }
 
   // WRITE //
