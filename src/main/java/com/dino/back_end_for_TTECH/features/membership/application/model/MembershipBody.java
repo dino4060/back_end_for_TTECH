@@ -15,7 +15,6 @@ public class MembershipBody {
 
   Long id;
 
-  @NotBlank(message = "Membership name is required")
   String membershipName;
 
   @NotBlank(message = "Membership code is required")
@@ -24,8 +23,7 @@ public class MembershipBody {
   @Min(value = 0, message = "Min point must be >= 0")
   Integer minPoint;
 
-  @Min(value = 1, message = "Validity months must be >= 1")
-  Integer validityMonths;
-
   List<BenefitBody> benefits = new ArrayList<>();
+
+  Boolean isAlive;
 }

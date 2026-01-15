@@ -9,11 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.dino.back_end_for_TTECH.features.membership.domain.Member;
+import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
 import com.dino.back_end_for_TTECH.features.profile.domain.User;
 import com.dino.back_end_for_TTECH.shared.domain.BaseRepository;
 
 @Repository
 public interface MemberRepository extends BaseRepository<Member, Long> {
+
+  boolean existsByMembership(Membership membership);
 
   List<Member> findByCustomerIn(List<User> customers);
 

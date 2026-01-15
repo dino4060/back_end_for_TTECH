@@ -51,12 +51,12 @@ public class Membership extends BaseEntity {
 
   Integer minPoint;
 
-  Integer validityMonths;
-
-  Boolean isAlive = true;
+  Integer validityMonths = 6;
 
   @OneToMany(mappedBy = "membership", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   List<Benefit> benefits = new ArrayList<>();
+
+  Boolean isAlive = true;
 
   public Member enrollMember(User customer) {
     var member = new Member();

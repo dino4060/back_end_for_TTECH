@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 public class MemberData {
   Integer points;
 
-  Membership membership;
+  MembershipData membership;
 
   LocalDateTime rankedAt;
 
@@ -19,7 +19,7 @@ public class MemberData {
 
   @Data
   @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-  public static class Membership {
+  public static class MembershipData {
     String membershipCode;
   }
 }

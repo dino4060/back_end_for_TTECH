@@ -26,4 +26,6 @@ public class BenefitBody {
   Integer minSpend;
 
   Integer limitPerCustomer;
+
+  Boolean isAlive;
 }

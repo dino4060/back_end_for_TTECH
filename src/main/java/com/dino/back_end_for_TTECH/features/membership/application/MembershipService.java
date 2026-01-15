@@ -11,10 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dino.back_end_for_TTECH.features.membership.application.mapper.MembershipMapper;
 import com.dino.back_end_for_TTECH.features.membership.application.model.BenefitBody;
 import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipBody;
+import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipBodyPatch;
 import com.dino.back_end_for_TTECH.features.membership.application.model.MembershipData;
 import com.dino.back_end_for_TTECH.features.membership.domain.Benefit;
 import com.dino.back_end_for_TTECH.features.membership.domain.Membership;
+import com.dino.back_end_for_TTECH.features.membership.domain.repository.MemberRepository;
 import com.dino.back_end_for_TTECH.features.membership.domain.repository.MembershipRepository;
+import com.dino.back_end_for_TTECH.shared.application.exception.BadRequestE;
 import com.dino.back_end_for_TTECH.shared.application.exception.NotFoundE;
 
 import lombok.AccessLevel;
@@ -28,12 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MembershipService {
 
-  MembershipRepository membshipRepo;
-  MembershipMapper membshipMapper;
+  MembershipRepository membershipRepo;
+  MembershipMapper membershipMapper;
+
+  MemberRepository memberRepo;
 
   @Transactional(readOnly = true)
   public Membership findStarterRank() {
-    var memberships = membshipRepo.findAll();
+    var memberships = membershipRepo.findAll();
 
     if (memberships.isEmpty())
       return null;
@@ -43,43 +48,60 @@ public class MembershipService {
 
   @Transactional(readOnly = true)
   public List<MembershipData> list() {
-    return membshipRepo.findAll().stream()
+    return membershipRepo.findAll().stream()
         .sorted((a, b) -> b.getMinPoint().compareTo(a.getMinPoint()))
-        .map(m -> membshipMapper.toData(m))
+        .map(m -> membershipMapper.toData(m))
         .collect(Collectors.toList());
-  }
-
-  @Transactional(readOnly = true)
-  public MembershipData get(long id) {
-    var membership = membshipRepo.findWithBenefitsById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
-
-    return membshipMapper.toData(membership);
   }
 
   @Transactional
   public void delete(long id) {
-    var membership = membshipRepo.findById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
-    membshipRepo.delete(membership);
+    var membership = membershipRepo.findById(id)
+        .orElseThrow(() -> new NotFoundE("Membership not found"));
+
+    if (memberRepo.existsByMembership(membership))
+      throw new BadRequestE("Membership đã được sử dụng, không thể xóa");
+
+    try {
+      membershipRepo.delete(membership);
+    } catch (Exception e) {
+      throw new BadRequestE("Membership đã được tham chiếu, không thể xóa");
+    }
+  }
+
+  @Transactional
+  public void patch(MembershipBodyPatch body) {
+    Membership membership = membershipRepo.findById(body.getId())
+        .orElseThrow(() -> new NotFoundE("Membership not found with id: " + body.getId()));
+
+    if (body.getIsAlive() != null) {
+      membership.setIsAlive(body.getIsAlive());
+    }
+
+    membershipRepo.save(membership);
+    return;
   }
 
   @Transactional
   public MembershipData update(MembershipBody body) {
     var id = body.getId();
-    var membership = membshipRepo.findWithBenefitsById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
+    var membership = membershipRepo.findWithBenefitsById(id).orElseThrow(() -> new NotFoundE("Membership not found"));
 
-    membshipMapper.toModel(body, membership);
+    membershipMapper.toModel(body, membership);
+    membership.setMembershipName(membership.getMembershipCode());
 
     if (body.getBenefits() != null) {
       processBenefits(membership, body.getBenefits());
     }
 
-    var saved = membshipRepo.save(membership);
-    return membshipMapper.toData(saved);
+    var saved = membershipRepo.save(membership);
+    return membershipMapper.toData(saved);
   }
 
   @Transactional
   public MembershipData create(MembershipBody body) {
-    var membership = membshipMapper.toModel(body);
+    var membership = membershipMapper.toModel(body);
+    membership.setMembershipName(membership.getMembershipCode());
 
     if (body.getBenefits() != null && !body.getBenefits().isEmpty()) {
       List<Benefit> benefits = body.getBenefits().stream()
@@ -89,8 +111,8 @@ public class MembershipService {
       membership.getBenefits().addAll(benefits);
     }
 
-    var saved = membshipRepo.save(membership);
-    return membshipMapper.toData(saved);
+    var saved = membershipRepo.save(membership);
+    return membershipMapper.toData(saved);
   }
 
   private void processBenefits(Membership membership, List<BenefitBody> benefitBodies) {
@@ -123,6 +145,7 @@ public class MembershipService {
     benefit.setBenefitUnit(body.getBenefitUnit());
     benefit.setMinSpend(body.getMinSpend());
     benefit.setLimitPerCustomer(body.getLimitPerCustomer());
+    benefit.setIsAlive(body.getIsAlive());
     return benefit;
   }
 
@@ -133,6 +156,7 @@ public class MembershipService {
     benefit.setBenefitUnit(body.getBenefitUnit());
     benefit.setMinSpend(body.getMinSpend());
     benefit.setLimitPerCustomer(body.getLimitPerCustomer());
+    benefit.setIsAlive(body.getIsAlive());
   }
 
 }
