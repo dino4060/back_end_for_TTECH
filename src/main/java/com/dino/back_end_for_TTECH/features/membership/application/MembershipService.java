@@ -44,7 +44,8 @@ public class MembershipService {
   @Transactional(readOnly = true)
   public List<MembershipData> list() {
     return membshipRepo.findAll().stream()
-        .map(membshipMapper::toData)
+        .sorted((a, b) -> b.getMinPoint().compareTo(a.getMinPoint()))
+        .map(m -> membshipMapper.toData(m))
         .collect(Collectors.toList());
   }
 
@@ -121,7 +122,6 @@ public class MembershipService {
     benefit.setBenefitValue(body.getBenefitValue());
     benefit.setBenefitUnit(body.getBenefitUnit());
     benefit.setMinSpend(body.getMinSpend());
-    benefit.setValidityMonths(body.getValidityMonths());
     benefit.setLimitPerCustomer(body.getLimitPerCustomer());
     return benefit;
   }
@@ -132,7 +132,6 @@ public class MembershipService {
     benefit.setBenefitValue(body.getBenefitValue());
     benefit.setBenefitUnit(body.getBenefitUnit());
     benefit.setMinSpend(body.getMinSpend());
-    benefit.setValidityMonths(body.getValidityMonths());
     benefit.setLimitPerCustomer(body.getLimitPerCustomer());
   }
 

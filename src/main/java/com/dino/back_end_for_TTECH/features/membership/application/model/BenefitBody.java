@@ -25,7 +25,5 @@ public class BenefitBody {
 
   Integer minSpend;
 
-  Integer validityMonths;
-
   Integer limitPerCustomer;
 }

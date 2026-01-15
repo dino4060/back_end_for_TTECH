@@ -15,7 +15,6 @@ public class BenefitData {
   Integer benefitValue;
   String benefitUnit;
   Integer minSpend;
-  Integer validityMonths;
   Integer limitPerCustomer;
   Map<Long, Integer> countPerCustomer;
 }

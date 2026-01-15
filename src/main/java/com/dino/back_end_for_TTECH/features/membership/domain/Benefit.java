@@ -60,13 +60,13 @@ public class Benefit extends BaseEntity {
 
   Integer minSpend;
 
-  Integer validityMonths;
-
   Integer limitPerCustomer;
 
   @Type(JsonType.class)
   @Column(columnDefinition = "jsonb")
   Map<Long, Integer> countPerCustomer = new HashMap<>();
+
+  Boolean isAlive = true;
 
   public void markAsUsed(Long customerId) {
     // Increment customer usage

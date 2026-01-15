@@ -15,6 +15,7 @@ public class MembershipData {
   String membershipCode;
   Integer minPoint;
   Integer validityMonths;
+  Boolean isAlive;
   List<BenefitData> benefits;
   Instant createdAt;
   Instant updatedAt;
