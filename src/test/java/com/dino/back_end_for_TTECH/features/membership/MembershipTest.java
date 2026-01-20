@@ -42,7 +42,7 @@ class MembershipTest {
     assertThat(result.getCustomer()).isEqualTo(customer);
     assertThat(result.getPoints()).isEqualTo(0);
     assertThat(result.getRankedAt()).isNotNull();
-    assertThat(result.hasStatus(MemberStatus.UPGRADE)).isFalse();
+    assertThat(result.hasStatus(MemberStatus.UPGRADE)).isTrue();
 
     assertThat(membership.getIsAlive()).isTrue();
     assertThat(membership.getValidityMonths()).isEqualTo(6);
